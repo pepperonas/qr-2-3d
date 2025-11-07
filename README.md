@@ -5,6 +5,7 @@ Automatische Generierung von 3D-druckbaren QR-Code-Modellen aus URLs oder PNG/JP
 ## Features
 
 - **Desktop GUI**: Benutzerfreundliche Anwendung mit Echtzeit-Vorschau der Parameter
+- **Batch-Verarbeitung**: Mehrere Modelle automatisch generieren via JSON-Konfiguration
 - **URL-Support**: QR-Codes direkt aus URLs generieren
 - **Vier Modi**:
   - Quadratisch (55x55mm)
@@ -12,7 +13,8 @@ Automatische Generierung von 3D-druckbaren QR-Code-Modellen aus URLs oder PNG/JP
   - Rechteck mit Text (54x64mm)
   - Pendant mit Text (55x65mm)
 - **Text-Funktion**: Optional erhabener Text (max. 12 Zeichen) unter dem QR-Code
-- **Optimierte Größe**: QR-Code nutzt fast die gesamte Kartenfläche (minimaler 0.5mm Rand)
+- **Text-Rotation**: 180° Drehung für bessere Lesbarkeit (automatisch bei Pendant+Text)
+- **Optimierte Größe**: QR-Code nutzt fast die gesamte Kartenfläche (minimaler Rand)
 - **Relief-QR-Code**: Erhabene schwarze Pixel (1mm)
 - **Abgerundete Ecken**: 2mm Radius für professionelles Design
 - **Performance**: ~1-2 Minuten pro Modell dank intelligentem Pixel-Sampling
@@ -88,6 +90,66 @@ brew install openscad
 7. **Generate 3D Model** klicken
 8. Warten (~1-2 Minuten)
 9. ✅ Erfolg! Dateien in `generated/` Ordner
+
+### Batch-Verarbeitung (GUI)
+
+Für die Generierung mehrerer Modelle auf einmal steht eine Batch-Funktion zur Verfügung:
+
+**Erstmalige Verwendung:**
+1. GUI starten: `./venv-gui/bin/python main_simple.py`
+2. Im Bereich "Batch Processing" auf "Create Config Template" klicken
+3. Datei `batch/config.json` wird erstellt mit Beispiel-Konfiguration
+4. `batch/config.json` nach Wunsch anpassen (siehe unten)
+5. Auf "Start Batch (X models)" klicken
+6. Warten bis alle Modelle generiert sind
+
+**Config-Struktur (`batch/config.json`):**
+```json
+{
+  "global_params": {
+    "card_height": 1.25,
+    "qr_margin": 2.0,
+    "qr_relief": 1.0,
+    "corner_radius": 2
+  },
+  "models": [
+    {
+      "name": "example-square",
+      "url": "https://example.com",
+      "mode": "square"
+    },
+    {
+      "name": "github-pendant",
+      "url": "https://github.com",
+      "mode": "pendant"
+    },
+    {
+      "name": "custom-text",
+      "url": "https://mysite.com",
+      "mode": "rectangle-text",
+      "text": "CUSTOM TEXT",
+      "text_rotation": 0
+    },
+    {
+      "name": "pendant-with-override",
+      "url": "https://wikipedia.org",
+      "mode": "pendant-text",
+      "text": "WIKI",
+      "card_height": 1.5
+    }
+  ]
+}
+```
+
+**Wichtige Hinweise:**
+- **global_params**: Standard-Parameter für alle Modelle
+- **models**: Array mit einzelnen Modell-Konfigurationen
+- Pflichtfelder pro Modell: `name`, `url`, `mode`
+- Optional: `text`, `text_rotation` (für Text-Modi)
+- Optional: Individuelle Parameter (überschreiben global_params)
+- Status-Label aktualisiert sich automatisch alle 5 Sekunden
+- Fortschritt wird in Echtzeit angezeigt (X/Y Modelle)
+- Fehlgeschlagene Modelle werden übersprungen, nicht abgebrochen
 
 ### Kommandozeile
 

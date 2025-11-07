@@ -24,6 +24,8 @@ QRs/
 ├── qr_generate.sh             # CLI wrapper script
 ├── venv-gui/                  # Python 3.13 virtual environment
 ├── generated/                 # Output directory for all generated files
+├── batch/                     # Batch processing (user-specific, gitignored)
+│   └── config.json            # Batch configuration file
 ├── ui/
 │   ├── __init__.py
 │   └── viewer_widget.py       # PyVista 3D viewer component (unused)
@@ -95,6 +97,59 @@ Background worker that:
 4. Applies custom parameters
 5. Generates SCAD and STL files
 6. Emits signals for progress and completion
+
+**Class: BatchGeneratorThread (QThread)**
+
+Background worker for batch processing that:
+1. Loads `batch/config.json` configuration
+2. Parses global parameters and models array
+3. Iterates through all models sequentially
+4. For each model:
+   - Validates required fields (name, url, mode)
+   - Generates QR code from URL if needed
+   - Creates QRModelGenerator with global params
+   - Applies model-specific parameter overrides
+   - Generates SCAD and STL files
+   - Emits progress signals (current/total)
+5. Collects success/failure statistics
+6. Emits final summary with details
+
+**Batch Processing Features:**
+- **Auto-refresh**: QTimer checks config status every 5 seconds
+- **Status display**: Shows config existence, model count, or JSON errors
+- **Button states**: Dynamic text ("Create Config", "Start Batch (X models)")
+- **Config template**: Creates `batch/config.json` with 4 example models
+- **Error handling**: Skips failed models, continues with remaining ones
+- **Progress tracking**: Real-time updates showing "Processing X/Y: model-name"
+- **Global parameters**: card_height, qr_margin, qr_relief, corner_radius
+- **Model overrides**: Individual models can override global params
+- **Output**: All files saved to `generated/` directory
+
+**Batch Config Structure (`batch/config.json`):**
+```json
+{
+  "global_params": {
+    "card_height": 1.25,
+    "qr_margin": 2.0,
+    "qr_relief": 1.0,
+    "corner_radius": 2
+  },
+  "models": [
+    {
+      "name": "example-square",
+      "url": "https://example.com",
+      "mode": "square"
+    },
+    {
+      "name": "custom-params",
+      "url": "https://github.com",
+      "mode": "pendant-text",
+      "text": "GITHUB",
+      "card_height": 1.5
+    }
+  ]
+}
+```
 
 **Important: No 3D Viewer**
 - ViewerWidget exists but is NOT used in main_simple.py
@@ -402,6 +457,15 @@ Before committing changes:
 - [ ] Text rotation works correctly (0° and 180°)
 - [ ] Pendant-text applies automatic 180° rotation
 - [ ] Rotated text margins are correct (no overlap with QR code)
+- [ ] Batch status label updates (shows config status)
+- [ ] Batch button creates config template when clicked (no config exists)
+- [ ] Batch config.json has correct structure (global_params + models array)
+- [ ] Batch processing generates all models sequentially
+- [ ] Batch progress updates correctly (X/Y models)
+- [ ] Failed batch models are skipped (processing continues)
+- [ ] Batch completion shows summary (successful/failed counts)
+- [ ] QTimer auto-refreshes batch status every 5 seconds
+- [ ] Individual model params override global params correctly
 - [ ] STL files are valid (open in slicer)
 - [ ] Parameters from GUI apply correctly
 - [ ] CLI wrapper works
@@ -437,10 +501,12 @@ For development questions:
 
 ---
 
-**Last Updated:** 2025-01-07 (Added text rotation feature)
+**Last Updated:** 2025-01-07 (Added batch processing feature)
 **Python Version:** 3.13
 **Primary GUI:** main_simple.py
 **Status:** Production-ready, GUI functional without 3D viewer
-**Latest Feature:** Text rotation (0° or 180°) for text modes - Rectangle-text: user choice, Pendant-text: automatic
+**Latest Features:**
+- Batch processing: Generate multiple models from JSON configuration
+- Text rotation (0° or 180°) for text modes - Rectangle-text: user choice, Pendant-text: automatic
 **Developer:** Martin Pfeffer
 **License:** MIT

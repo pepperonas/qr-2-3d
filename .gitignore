@@ -20,6 +20,9 @@ generated/
 *.stl
 *.scad
 
+# Batch configuration (user-specific)
+batch/
+
 # IDE and Editor
 .vscode/
 .idea/
