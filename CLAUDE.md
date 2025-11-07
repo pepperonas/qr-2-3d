@@ -68,6 +68,7 @@ text_content = ""    # Text to display under QR code
 text_size = 6        # Font size in mm (optimized for 12 chars)
 text_height = 1.0    # Relief height of text (same as QR)
 text_margin = 2      # Distance between QR code and text in mm
+text_rotation = 0    # Z-axis rotation (0 or 180 degrees)
 ```
 
 **Modes:**
@@ -143,6 +144,29 @@ module text_label() {
 2. Adjustment: 6mm text → Fits 12 characters properly
 3. Adjustment: 64mm card → Better proportions
 4. Adjustment: 2mm margin → Text closer to QR code
+5. Added: Text rotation (0° or 180°) for flexible text orientation
+
+**Text Rotation Feature (Added 2025-01-07):**
+
+**Problem:** Users wanted text to be readable from different orientations, especially for pendant mode where the text should be upside-down relative to the QR code for better readability when hanging.
+
+**Solution:**
+- **Rectangle-text mode**: User-selectable via checkbox (0° or 180°)
+- **Pendant-text mode**: Always 180° (automatic)
+- **OpenSCAD**: `rotate([0, 0, text_rotation])` before text extrusion
+- **Margin correction**: When rotated 180°, text grows upward from anchor point
+  - Normal (0°): `text_offset_y = base_offset`
+  - Rotated (180°): `text_offset_y = base_offset + text_size` (adds 6mm)
+
+**GUI Implementation:**
+- Checkbox "Rotate text 180° (upside down)" visible only for rectangle-text mode
+- Hidden for pendant-text (automatic rotation)
+- Dynamic show/hide based on mode selection
+
+**CLI Implementation:**
+```bash
+--text-rotation {0,180}  # Default: 0, ignored for pendant-text (always 180)
+```
 
 ### 2. Performance Optimization: Pixel Sampling
 
@@ -374,6 +398,10 @@ Before committing changes:
 - [ ] Text field shows/hides correctly based on mode
 - [ ] Text validation works (required for text modes, max 12 chars)
 - [ ] Text renders correctly in STL (Liberation Mono Bold, 6mm, 1mm relief)
+- [ ] Text rotation checkbox shows/hides correctly (Rectangle+Text only)
+- [ ] Text rotation works correctly (0° and 180°)
+- [ ] Pendant-text applies automatic 180° rotation
+- [ ] Rotated text margins are correct (no overlap with QR code)
 - [ ] STL files are valid (open in slicer)
 - [ ] Parameters from GUI apply correctly
 - [ ] CLI wrapper works
@@ -409,10 +437,10 @@ For development questions:
 
 ---
 
-**Last Updated:** 2025-01-07 (Added text mode features)
+**Last Updated:** 2025-01-07 (Added text rotation feature)
 **Python Version:** 3.13
 **Primary GUI:** main_simple.py
 **Status:** Production-ready, GUI functional without 3D viewer
-**Latest Feature:** Text labels under QR code (rectangle-text and pendant-text modes)
+**Latest Feature:** Text rotation (0° or 180°) for text modes - Rectangle-text: user choice, Pendant-text: automatic
 **Developer:** Martin Pfeffer
 **License:** MIT

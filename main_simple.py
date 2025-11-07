@@ -13,7 +13,7 @@ sys.path.insert(0, str(project_root))
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QLineEdit, QPushButton, QComboBox, QDoubleSpinBox,
-    QGroupBox, QFormLayout, QProgressBar, QFileDialog, QMessageBox
+    QGroupBox, QFormLayout, QProgressBar, QFileDialog, QMessageBox, QCheckBox
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from generate_qr_model import QRModelGenerator
@@ -24,13 +24,14 @@ class GeneratorThread(QThread):
     progress = pyqtSignal(str)
     finished = pyqtSignal(bool, str, str)  # success, stl_path, message
 
-    def __init__(self, input_path, output_name, mode, params, text_content=''):
+    def __init__(self, input_path, output_name, mode, params, text_content='', text_rotation=0):
         super().__init__()
         self.input_path = input_path
         self.output_name = output_name
         self.mode = mode
         self.params = params
         self.text_content = text_content
+        self.text_rotation = text_rotation
 
     def run(self):
         try:
@@ -70,6 +71,7 @@ class GeneratorThread(QThread):
             generator.qr_relief = self.params['relief']
             generator.corner_radius = self.params['corner_radius']
             generator.text_content = self.text_content
+            generator.text_rotation = self.text_rotation
 
             self.progress.emit("Creating 3D model...")
             scad_path, stl_path = generator.generate()
@@ -155,12 +157,17 @@ class SimpleMainWindow(QMainWindow):
         text_layout.addWidget(self.text_field)
         mode_layout.addLayout(text_layout)
 
+        # Text rotation checkbox (only visible for Rectangle+Text mode)
+        self.text_rotation_checkbox = QCheckBox("Rotate text 180° (upside down)")
+        mode_layout.addWidget(self.text_rotation_checkbox)
+
         # Store text widgets for show/hide
         self.text_label = text_layout.itemAt(0).widget()
 
-        # Initially hide text field (square mode is default)
+        # Initially hide text field and rotation checkbox (square mode is default)
         self.text_label.setVisible(False)
         self.text_field.setVisible(False)
+        self.text_rotation_checkbox.setVisible(False)
 
         mode_group.setLayout(mode_layout)
         layout.addWidget(mode_group)
@@ -275,11 +282,16 @@ class SimpleMainWindow(QMainWindow):
                 self.name_field.setText(name)
 
     def on_mode_changed(self, index):
-        """Show/hide text field based on selected mode"""
+        """Show/hide text field and rotation checkbox based on selected mode"""
         # Text modes are indices 2 and 3
         is_text_mode = index >= 2
         self.text_label.setVisible(is_text_mode)
         self.text_field.setVisible(is_text_mode)
+
+        # Rotation checkbox only visible for Rectangle+Text (index 2)
+        # Pendant+Text (index 3) always uses 180° rotation automatically
+        is_rectangle_text = index == 2
+        self.text_rotation_checkbox.setVisible(is_rectangle_text)
 
     def generate_model(self):
         """Start model generation in background thread"""
@@ -318,6 +330,16 @@ class SimpleMainWindow(QMainWindow):
             QMessageBox.warning(self, "Text Required", "Please enter text for the text-mode model.")
             return
 
+        # Get text rotation
+        # Pendant+Text: always 180° (automatic)
+        # Rectangle+Text: user choice via checkbox
+        if mode_index == 3:  # pendant-text
+            text_rotation = 180
+        elif mode_index == 2:  # rectangle-text
+            text_rotation = 180 if self.text_rotation_checkbox.isChecked() else 0
+        else:
+            text_rotation = 0
+
         # Get parameters
         params = {
             'height': self.height_spin.value(),
@@ -332,7 +354,7 @@ class SimpleMainWindow(QMainWindow):
         self.progress_bar.setRange(0, 0)  # Indeterminate
         self.status_label.setText("Starting generation...")
 
-        self.generator_thread = GeneratorThread(input_text, output_name, mode, params, text_content)
+        self.generator_thread = GeneratorThread(input_text, output_name, mode, params, text_content, text_rotation)
         self.generator_thread.progress.connect(self.on_progress)
         self.generator_thread.finished.connect(self.on_generation_finished)
         self.generator_thread.start()

@@ -78,14 +78,16 @@ brew install openscad
    - Rectangle + Text (54x64mm) - Rechteck mit Textfeld
    - Pendant + Text (55x65mm) - Anhänger mit Textfeld
 4. **Text**: Bei Text-Modi: Text eingeben (max. 12 Zeichen)
-5. **Parameter anpassen**:
+5. **Text-Rotation** (nur bei Rectangle+Text): Optional "Rotate text 180°" aktivieren für umgedrehten Text
+   - Bei Pendant+Text wird der Text automatisch um 180° gedreht
+6. **Parameter anpassen**:
    - Card Height: 0.5-5mm (Standard: 1.25mm)
    - QR Margin: 0-10mm (Standard: 0.5mm)
    - QR Relief: 0.1-2mm (Standard: 1mm)
    - Corner Radius: 0-5mm (Standard: 2mm)
-6. **Generate 3D Model** klicken
-7. Warten (~1-2 Minuten)
-8. ✅ Erfolg! Dateien in `generated/` Ordner
+7. **Generate 3D Model** klicken
+8. Warten (~1-2 Minuten)
+9. ✅ Erfolg! Dateien in `generated/` Ordner
 
 ### Kommandozeile
 
@@ -116,6 +118,11 @@ brew install openscad
 ./qr_generate.sh https://github.com/user --mode pendant-text --text "GitHub" --name github
 ```
 
+**Mit rotiertem Text (Rectangle+Text):**
+```bash
+./venv-gui/bin/python generate_qr_model.py https://example.com --mode rectangle-text --text "ROTATED" --text-rotation 180 --name mycard-rot
+```
+
 #### Von Bilddatei:
 
 **Quadratisch:**
@@ -140,6 +147,7 @@ brew install openscad
 | `input` | QR-Code-Bilddatei (PNG/JPG) oder URL | *erforderlich* |
 | `--mode` | Modus: `square`, `pendant`, `rectangle-text`, `pendant-text` | `square` |
 | `--text`, `-t` | Text unter QR-Code (max. 12 Zeichen, nur für *-text Modi) | *(leer)* |
+| `--text-rotation` | Text um 180° drehen (0 oder 180, auto bei pendant-text) | `0` |
 | `--output`, `-o` | Output-Verzeichnis | `generated` |
 | `--name`, `-n` | Basisname für Ausgabedateien | *abgeleitet von Input* |
 
@@ -246,6 +254,7 @@ brew install openscad
 | **Text-Relief** | **1mm** (gleich wie QR-Code) |
 | **Text-Abstand** | **2mm** (Abstand zum QR-Code) |
 | **Text-Font** | **Liberation Mono Bold** (Monospace) |
+| **Text-Rotation** | **0° oder 180°** (Rectangle: wählbar, Pendant: automatisch 180°) |
 
 ## Ausgabedateien
 

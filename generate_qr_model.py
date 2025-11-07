@@ -40,6 +40,7 @@ class QRModelGenerator:
         self.text_size = 6       # Font size in mm (reduced from 8 to fit 12 chars)
         self.text_height = 1.0   # Relief height of text (same as QR)
         self.text_margin = 2     # Distance between QR code and text in mm
+        self.text_rotation = 0   # Rotation in Z-axis (0 or 180 degrees)
 
     @staticmethod
     def is_url(text):
@@ -158,7 +159,14 @@ class QRModelGenerator:
         # Calculate text position if text mode
         text_offset_y = 0
         if self.mode in ['rectangle-text', 'pendant-text'] and self.text_content:
-            text_offset_y = qr_offset_y + (pixel_size * qr_pixels) + self.text_margin
+            base_offset = qr_offset_y + (pixel_size * qr_pixels) + self.text_margin
+            # If text is rotated 180°, we need to adjust the Y position
+            # When rotated, the text grows upward from the anchor point instead of downward
+            if self.text_rotation == 180:
+                # Add the text height to push the anchor point down so rotated text doesn't overlap QR
+                text_offset_y = base_offset + self.text_size
+            else:
+                text_offset_y = base_offset
 
         return {
             'card_length': card_length,
@@ -205,6 +213,7 @@ text_size = {self.text_size};
 text_height = {self.text_height};
 text_offset_x = {dimensions['text_offset_x']};
 text_offset_y = {dimensions['text_offset_y']};
+text_rotation = {self.text_rotation};  // Z-axis rotation (0 or 180 degrees)
 
 // Helper module for rounded corners (faster than minkowski)
 module rounded_square(width, length, height, radius) {{
@@ -224,6 +233,7 @@ module rounded_square(width, length, height, radius) {{
 module text_label() {{
     if (has_text) {{
         translate([text_offset_x, text_offset_y, card_height])
+        rotate([0, 0, text_rotation])
         linear_extrude(height=text_height)
         text(text_content, size=text_size, font="Liberation Mono:style=Bold",
              halign="center", valign="bottom");
@@ -392,6 +402,8 @@ Examples:
                         help='Model type: square (default), pendant (with hole), rectangle-text (54x74mm with text), pendant-text (pendant with text)')
     parser.add_argument('--text', '-t', type=str, default='',
                         help='Text to display under QR code (max 12 characters, only for *-text modes)')
+    parser.add_argument('--text-rotation', type=int, choices=[0, 180], default=0,
+                        help='Rotate text 180 degrees in Z-axis (default: 0, automatic for pendant-text mode)')
     parser.add_argument('--output', '-o', type=str, default='generated',
                         help='Output directory for generated files (default: ./generated)')
     parser.add_argument('--name', '-n', type=str, default=None,
@@ -441,6 +453,13 @@ Examples:
     try:
         generator = QRModelGenerator(input_path, args.mode, args.output)
         generator.text_content = text_content
+
+        # Set text rotation (automatic for pendant-text, user choice for rectangle-text)
+        if args.mode == 'pendant-text':
+            generator.text_rotation = 180  # Always rotated for pendant mode
+        else:
+            generator.text_rotation = args.text_rotation
+
         generator.generate()
     except Exception as e:
         print(f"❌ Error: {e}")
