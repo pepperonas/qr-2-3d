@@ -1,0 +1,418 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Context
+
+**QR Code 3D Model Generator** - Desktop application and CLI tool for generating 3D-printable QR code models from URLs or images. Designed for credit card-sized (55x55mm) physical QR codes optimized for 3D printing.
+
+## Technology Stack
+
+- **Python 3.13** (venv-gui)
+- **PyQt6** - Desktop GUI framework
+- **PyVista/VTK** - 3D visualization (available but not actively used)
+- **Pillow** - Image processing
+- **qrcode[pil]** - QR code generation with PIL support
+- **OpenSCAD** - External tool for STL rendering (CLI)
+
+## Project Structure
+
+```
+QRs/
+├── main_simple.py             # Primary desktop GUI application
+├── generate_qr_model.py       # Backend generator (core logic)
+├── qr_generate.sh             # CLI wrapper script
+├── venv-gui/                  # Python 3.13 virtual environment
+├── generated/                 # Output directory for all generated files
+├── ui/
+│   ├── __init__.py
+│   └── viewer_widget.py       # PyVista 3D viewer component (unused)
+├── requirements.txt           # Base dependencies (Pillow, qrcode)
+├── requirements-gui.txt       # GUI dependencies (PyQt6, PyVista)
+├── README.md                  # User documentation
+├── INSTALL.md                 # Installation guide
+└── CLAUDE.md                  # This file
+```
+
+## Architecture
+
+### Backend: generate_qr_model.py
+
+**Class: QRModelGenerator**
+
+Core generator that:
+1. Accepts URLs or image file paths
+2. Generates QR codes from URLs using `qrcode` library
+3. Processes images with Pillow (sampling for performance)
+4. Generates OpenSCAD (.scad) code
+5. Calls OpenSCAD CLI to render STL files
+
+**Key Methods:**
+- `is_url(text)` - Static method to detect URLs
+- `generate_qr_image(data, output_path)` - Static method to create QR codes
+- `load_and_process_image()` - Image processing with sampling
+- `generate_openscad(matrix, dimensions)` - SCAD code generation
+- `export_stl(scad_path, stl_path)` - OpenSCAD CLI invocation
+- `generate()` - Main workflow orchestration
+
+**Default Parameters:**
+```python
+card_width = 55      # mm (ISO 7810 credit card size)
+card_height = 1.25   # mm
+qr_margin = 0.5      # mm (minimized for max QR area)
+qr_relief = 1.0      # mm (raised QR code height)
+corner_radius = 2    # mm
+
+# Text mode parameters (NEW in 2025)
+text_content = ""    # Text to display under QR code
+text_size = 6        # Font size in mm (optimized for 12 chars)
+text_height = 1.0    # Relief height of text (same as QR)
+text_margin = 2      # Distance between QR code and text in mm
+```
+
+**Modes:**
+- `square`: 55x55x1.25mm - Classic square card
+- `pendant`: 55x61x1.25mm with 5mm diameter hole for keychain
+- `rectangle-text`: 54x64x1.25mm with text label under QR code
+- `pendant-text`: 55x~65x1.25mm with hole and text label under QR code
+
+### GUI: main_simple.py
+
+**Class: SimpleMainWindow (QMainWindow)**
+
+Desktop application with:
+- Left panel: Input controls and parameter adjustments
+- Progress tracking with QProgressBar
+- Background thread for STL generation (non-blocking UI)
+
+**Class: GeneratorThread (QThread)**
+
+Background worker that:
+1. Detects if input is URL
+2. Generates QR code if needed
+3. Creates QRModelGenerator instance
+4. Applies custom parameters
+5. Generates SCAD and STL files
+6. Emits signals for progress and completion
+
+**Important: No 3D Viewer**
+- ViewerWidget exists but is NOT used in main_simple.py
+- PyVista 3D rendering has compatibility issues on macOS
+- Users open STL files in external viewers/slicers
+
+## Critical Design Decisions
+
+### 1. Text Mode Implementation (NEW in 2025)
+
+**Feature:** Optional text labels under QR code for personalization
+
+**Design Decisions:**
+- **Text size**: 6mm (optimized through testing for 12 character max width)
+- **Text margin**: 2mm from QR code (close but not touching)
+- **Text relief**: 1mm (same as QR code for uniform appearance)
+- **Font**: Liberation Mono Bold (monospace for consistent character width)
+- **Card dimensions**:
+  - Rectangle-text: 54x64mm (10mm shorter than initial 74mm prototype)
+  - Pendant-text: ~55x65mm (dynamically calculated based on text area)
+
+**OpenSCAD Implementation:**
+```scad
+module text_label() {
+    if (has_text) {
+        translate([text_offset_x, text_offset_y, card_height])
+        linear_extrude(height=text_height)
+        text(text_content, size=text_size, font="Liberation Mono:style=Bold",
+             halign="center", valign="bottom");
+    }
+}
+```
+
+**GUI Implementation:**
+- Text input field (QLineEdit) with 12 character limit
+- Dynamic show/hide based on selected mode (only visible for *-text modes)
+- Validation: Text required for text modes
+- Mode mapping: Indices 2 and 3 are text modes
+
+**CLI Implementation:**
+```bash
+./qr_generate.sh URL --mode rectangle-text --text "YOUR TEXT" --name output
+```
+
+**Iterative Refinement Process:**
+1. Initial: 8mm text, 74mm card → Text too large, card too long
+2. Adjustment: 6mm text → Fits 12 characters properly
+3. Adjustment: 64mm card → Better proportions
+4. Adjustment: 2mm margin → Text closer to QR code
+
+### 2. Performance Optimization: Pixel Sampling
+
+**Problem:** 100x100 pixel QR codes → ~10,000 3D cubes → 2-5 minute render time
+
+**Solution:** Sample to 50x50 grid → ~800-1,200 cubes → ~1-2 minute render time
+
+**Implementation:**
+```python
+target_grid = 50
+sample_rate = max(width, height) // target_grid
+
+for y in range(0, height, sample_rate):
+    for x in range(0, width, sample_rate):
+        pixel = img.getpixel((x, y))
+        row.append(pixel < threshold)
+```
+
+**Why it works:**
+- QR codes use Error Correction Level H (30% tolerance)
+- 3D printers can't render finer details anyway
+- Physical card margins provide required "quiet zone"
+
+### 2. Maximized QR Code Area
+
+**Standard QR Spec:** 4 modules border + physical margins
+
+**Our Approach:**
+- QR border: 1 module (reduced from 4)
+- Physical margin: 0.5mm (reduced from 2mm)
+- Result: ~54x54mm QR area on 55x55mm card
+
+**Reasoning:**
+- Physical card provides structural border
+- Error Correction Level H tolerates missing border modules
+- Better scanning (larger codes scan easier)
+
+**Implementation:**
+```python
+# In generate_qr_image()
+qr = qrcode.QRCode(
+    error_correction=qrcode.constants.ERROR_CORRECT_H,
+    border=1,  # Minimized for maximum QR area
+)
+```
+
+### 3. Python Version: 3.13 Required
+
+**Why not 3.14?**
+- VTK (required by PyVista) not yet available for Python 3.14
+- GUI dependencies need Python 3.13
+
+**Virtual Environment:**
+- `venv-gui/` uses Python 3.13
+- Created with: `python3.13 -m venv venv-gui`
+
+### 4. GUI Without 3D Preview
+
+**Original Plan:** Full 3D viewer with PyVista/VTK
+
+**Issue:** PyVista's QtInteractor has rendering problems on macOS
+- Window appears in dock but doesn't display
+- Main window freezes/doesn't show UI
+
+**Current Solution:**
+- Simplified GUI without 3D preview
+- `main_simple.py` is the working application
+- Users view STL in external tools (PrusaSlicer, Cura, etc.)
+
+**Files:**
+- ✅ `main_simple.py` - Working GUI
+- ❌ `main.py` - Deleted (had PyVista integration issues)
+- ⚠️ `ui/viewer_widget.py` - Kept for future attempts
+
+## Common Workflows
+
+### Adding New Parameters
+
+1. **Backend** (`generate_qr_model.py`):
+   ```python
+   class QRModelGenerator:
+       def __init__(self, ...):
+           self.new_parameter = default_value
+   ```
+
+2. **GUI** (`main_simple.py`):
+   - Add QDoubleSpinBox/QSpinBox in `create_controls_panel()`
+   - Update `GeneratorThread.run()` to apply parameter
+   ```python
+   generator.new_parameter = self.params['new_param']
+   ```
+
+3. **CLI** (`generate_qr_model.py` main()):
+   ```python
+   parser.add_argument('--new-param', type=float, default=X)
+   generator.new_parameter = args.new_param
+   ```
+
+### Performance Tuning
+
+**Faster rendering:**
+- Reduce `target_grid` in `load_and_process_image()` (less cubes)
+- Reduce `$fn` in OpenSCAD generation (less smooth curves)
+- Use `background=True` in `export_stl()` for async rendering
+
+**Better quality:**
+- Increase `target_grid` (more detail, slower)
+- Increase `$fn` value (smoother curves, slower)
+- Adjust `qr_relief` for more pronounced QR codes
+
+### Debugging Generation Issues
+
+**Check these in order:**
+1. URL detection: `QRModelGenerator.is_url(input)`
+2. QR code creation: Check `generated/*.png` exists
+3. SCAD generation: Check `generated/*-model.scad` exists and is valid
+4. OpenSCAD available: `which openscad`
+5. OpenSCAD rendering: Run manually `openscad -o test.stl test.scad`
+
+## Known Issues & Workarounds
+
+### Issue: PyVista 3D Viewer Not Working on macOS
+
+**Symptoms:**
+- App appears in dock but no window shows
+- Window shows but is blank/frozen
+- QtInteractor doesn't render properly
+
+**Attempted Solutions:**
+- `window.raise_()` and `window.activateWindow()` - didn't help
+- Different Qt backends - no improvement
+- Python 3.13 vs 3.14 - same issue
+
+**Current Workaround:**
+- Use `main_simple.py` without 3D viewer
+- Users open STL in external applications
+
+**Future Investigation:**
+- Try matplotlib 3D plotting instead of PyVista
+- Try web-based viewer (Three.js in QWebEngineView)
+- Test on Linux (may work better than macOS)
+
+### Issue: OpenSCAD Timeout on Complex QR Codes
+
+**Symptoms:**
+- STL generation takes > 2 minutes
+- Timeout errors in console
+
+**Solutions:**
+- Increase timeout: `subprocess.run(..., timeout=300)`
+- Use background mode: `export_stl(..., background=True)`
+- Reduce complexity: Lower `target_grid` or `$fn`
+
+## Development Commands
+
+### Start GUI
+```bash
+./venv-gui/bin/python main_simple.py
+```
+
+### Test CLI
+```bash
+# Test basic modes
+./qr_generate.sh https://example.com --mode pendant --name test
+
+# Test text modes
+./qr_generate.sh https://example.com --mode rectangle-text --text "HELLO" --name test-text
+./qr_generate.sh https://example.com --mode pendant-text --text "TEST" --name test-pendant
+```
+
+### Reinstall Dependencies
+```bash
+./venv-gui/bin/pip install -r requirements-gui.txt --force-reinstall
+```
+
+### Check Generated Files
+```bash
+ls -lh generated/
+```
+
+### Manual OpenSCAD Test
+```bash
+openscad -o test.stl generated/example-model.scad
+```
+
+## Code Style & Conventions
+
+- **PEP 8** compliance
+- **Type hints** preferred but not required
+- **Docstrings** for all public methods
+- **Comments** for complex algorithms (especially sampling logic)
+- **Error handling** with try-except and user-friendly messages
+- **Progress feedback** via print() or Qt signals
+
+## Important Reminders
+
+1. **Always use Python 3.13** (`./venv-gui/bin/python`)
+2. **Never commit `generated/` files** - user output only
+3. **Test both GUI and CLI** when changing backend
+4. **Check QR scannability** after parameter changes
+5. **Sampling is critical** - don't remove without careful consideration
+6. **Border=1 is intentional** - don't increase without reason
+
+## User Feedback Patterns
+
+Users often request:
+- **Larger QR codes** → Reduce margin or border
+- **Faster generation** → Optimize sampling or $fn
+- **Different shapes** → Add new modes to generate_openscad()
+- **Custom text/logos** → ✅ IMPLEMENTED: Text modes with Liberation Mono font
+- **Batch processing** → Add loop in CLI or GUI
+- **Personalization** → ✅ IMPLEMENTED: Text labels under QR code
+
+When users say "QR code is too small":
+- They mean margin is too large
+- Solution: Reduce `qr_margin` OR `border` parameter
+- Explain trade-off: Smaller margin = better scanning but less structural stability
+
+## Testing Checklist
+
+Before committing changes:
+- [ ] GUI launches without errors
+- [ ] URL input generates QR code
+- [ ] Image file input works
+- [ ] Square mode generates correct dimensions (55x55mm)
+- [ ] Pendant mode includes hole (55x61mm)
+- [ ] Rectangle-text mode generates with text (54x64mm)
+- [ ] Pendant-text mode includes hole and text (~55x65mm)
+- [ ] Text field shows/hides correctly based on mode
+- [ ] Text validation works (required for text modes, max 12 chars)
+- [ ] Text renders correctly in STL (Liberation Mono Bold, 6mm, 1mm relief)
+- [ ] STL files are valid (open in slicer)
+- [ ] Parameters from GUI apply correctly
+- [ ] CLI wrapper works
+- [ ] CLI --text parameter works for text modes
+- [ ] README updated if user-facing changes
+
+## Maintenance Notes
+
+**Regular tasks:**
+- Update dependencies: `pip list --outdated`
+- Test with various URL lengths
+- Verify QR scannability with phone
+- Check OpenSCAD compatibility
+
+**Performance monitoring:**
+- Target: < 2 minutes per generation
+- If slower: Profile and optimize sampling
+- If faster: Consider increasing quality
+
+**Code smell indicators:**
+- Hard-coded values instead of parameters
+- Duplicate code between GUI and CLI
+- No error handling around subprocess calls
+- Magic numbers without comments
+
+## Contact & Support
+
+For development questions:
+1. Read this CLAUDE.md thoroughly
+2. Check README.md for user-facing docs
+3. Review git history for context on changes
+4. Test changes with both GUI and CLI
+
+---
+
+**Last Updated:** 2025-01-07 (Added text mode features)
+**Python Version:** 3.13
+**Primary GUI:** main_simple.py
+**Status:** Production-ready, GUI functional without 3D viewer
+**Latest Feature:** Text labels under QR code (rectangle-text and pendant-text modes)
+**Developer:** Martin Pfeffer
+**License:** MIT
