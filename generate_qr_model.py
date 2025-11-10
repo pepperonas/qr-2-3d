@@ -284,7 +284,7 @@ module text_label() {{
         rotate([0, 0, text_rotation])
         linear_extrude(height=text_height)
         text(text_content, size=text_size, font="Liberation Mono:style=Bold",
-             halign="center", valign="bottom");
+             halign="center", valign="bottom", spacing=0.85);
     }}
 }}
 
