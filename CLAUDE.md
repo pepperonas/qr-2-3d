@@ -67,7 +67,7 @@ corner_radius = 2    # mm
 
 # Text mode parameters (NEW in 2025)
 text_content = ""    # Text to display under QR code
-text_size = 6        # Font size in mm (optimized for 12 chars)
+text_size = 6        # Font size in mm (DYNAMIC: auto-scaled 3-6mm based on text length)
 text_height = 1.0    # Relief height of text (same as QR)
 text_margin = 2      # Distance between QR code and text in mm
 text_rotation = 0    # Z-axis rotation (0 or 180 degrees)

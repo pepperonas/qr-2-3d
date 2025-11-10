@@ -256,7 +256,7 @@ Für die Generierung mehrerer Modelle auf einmal steht eine Batch-Funktion zur V
 - **Ränder**: 0.5mm rundum
 - **QR-Code-Bereich**: ~53 x 53 mm
 - **QR-Relief**: 1mm erhaben
-- **Text**: Erhaben (1mm), 6mm hoch, max. 12 Zeichen
+- **Text**: Erhaben (1mm), dynamisch 3-6mm hoch (automatisch skaliert), max. 12 Zeichen
 - **Text-Abstand**: 2mm unter QR-Code
 - **Font**: Liberation Mono Bold (Monospace)
 - **Verwendung**: Visitenkarten, beschriftete Etiketten, personalisierte Karten
@@ -280,7 +280,7 @@ Für die Generierung mehrerer Modelle auf einmal steht eine Batch-Funktion zur V
 - **Loch**: ⌀5mm, 6mm vom oberen Rand
 - **QR-Code-Bereich**: ~54 x 54 mm
 - **QR-Relief**: 1mm erhaben
-- **Text**: Erhaben (1mm), 6mm hoch, max. 12 Zeichen
+- **Text**: Erhaben (1mm), dynamisch 3-6mm hoch (automatisch skaliert), max. 12 Zeichen
 - **Text-Abstand**: 2mm unter QR-Code
 - **Font**: Liberation Mono Bold (Monospace)
 - **Verwendung**: Personalisierte Schlüsselanhänger, beschriftete Gepäckanhänger
@@ -312,7 +312,7 @@ Für die Generierung mehrerer Modelle auf einmal steht eine Batch-Funktion zur V
 | Oberer Rand (Pendant) | 8mm |
 | Lochdurchmesser | 5mm |
 | Loch-Position | 6mm vom oberen Rand, horizontal zentriert |
-| **Text-Größe** | **6mm** (optimiert für 12 Zeichen) |
+| **Text-Größe** | **3-6mm** (dynamisch skaliert je nach Textlänge) |
 | **Text-Relief** | **1mm** (gleich wie QR-Code) |
 | **Text-Abstand** | **2mm** (Abstand zum QR-Code) |
 | **Text-Font** | **Liberation Mono Bold** (Monospace) |

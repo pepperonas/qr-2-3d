@@ -118,8 +118,56 @@ class QRModelGenerator:
 
         return matrix, sampled_width, sampled_height
 
+    def calculate_text_size(self, text, available_width):
+        """
+        Calculate optimal text size based on text length and available width.
+
+        Liberation Mono Bold character width ≈ 0.65 * font_size
+
+        Args:
+            text: Text content
+            available_width: Available width in mm for text
+
+        Returns:
+            Optimal text size in mm (between 3mm and 6mm)
+        """
+        if not text or len(text) == 0:
+            return 6  # Default size if no text
+
+        # Liberation Mono Bold: character width ≈ 0.7 * font_size
+        # Using 0.7 instead of exact 0.65 to ensure text always fits with safety margin
+        char_width_factor = 0.7
+
+        # Calculate maximum text size that fits
+        # text_width = len(text) * char_width_factor * text_size
+        # We want: text_width <= available_width
+        # => text_size <= available_width / (len(text) * char_width_factor)
+        max_text_size = available_width / (len(text) * char_width_factor)
+
+        # Constrain to reasonable limits
+        min_size = 3.0  # Minimum readable size
+        max_size = 6.0  # Maximum size (current default)
+
+        text_size = max(min_size, min(max_text_size, max_size))
+
+        return text_size
+
     def calculate_dimensions(self, qr_pixels):
         """Calculate model dimensions based on mode"""
+        # Calculate dynamic text size if text mode
+        if self.mode in ['rectangle-text', 'pendant-text'] and self.text_content:
+            # Determine available width for text based on mode
+            if self.mode == 'rectangle-text':
+                card_width_for_text = 54  # Rectangle mode uses 54mm width
+            else:  # pendant-text
+                card_width_for_text = self.card_width  # 55mm
+
+            # Calculate available width (card width minus margins and safety buffer)
+            available_text_width = card_width_for_text - (2 * self.qr_margin) - 2  # 2mm safety buffer
+
+            # Calculate and set dynamic text size
+            self.text_size = self.calculate_text_size(self.text_content, available_text_width)
+
         # Text area height calculation (if text mode)
         text_area_height = 0
         if self.mode in ['rectangle-text', 'pendant-text'] and self.text_content:
