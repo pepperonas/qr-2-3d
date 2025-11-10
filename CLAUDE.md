@@ -165,7 +165,7 @@ Background worker for batch processing that:
 **Feature:** Optional text labels under QR code for personalization
 
 **Design Decisions:**
-- **Text size**: 6mm (optimized through testing for 12 character max width)
+- **Text size**: 3-6mm (dynamically scaled, supports up to 20 characters)
 - **Text margin**: 2mm from QR code (close but not touching)
 - **Text relief**: 1mm (same as QR code for uniform appearance)
 - **Font**: Liberation Mono Bold (monospace for consistent character width)
@@ -186,7 +186,7 @@ module text_label() {
 ```
 
 **GUI Implementation:**
-- Text input field (QLineEdit) with 12 character limit
+- Text input field (QLineEdit) with 20 character limit
 - Dynamic show/hide based on selected mode (only visible for *-text modes)
 - Validation: Text required for text modes
 - Mode mapping: Indices 2 and 3 are text modes
@@ -198,7 +198,7 @@ module text_label() {
 
 **Iterative Refinement Process:**
 1. Initial: 8mm text, 74mm card → Text too large, card too long
-2. Adjustment: 6mm text → Fits 12 characters properly
+2. Adjustment: 6mm text → Fits up to 7-8 characters at maximum size
 3. Adjustment: 64mm card → Better proportions
 4. Adjustment: 2mm margin → Text closer to QR code
 5. Added: Text rotation (0° or 180°) for flexible text orientation
@@ -253,12 +253,14 @@ module text_label() {
    text_size = max(3.0, min(max_text_size, 6.0))  # constrain 3-6mm
    ```
 
-4. **Examples (with qr_margin=2.0):**
-   - Rectangle-text: 46mm available (54mm - 4mm margins - 4mm buffer)
-   - Pendant-text: 47mm available (55mm - 4mm margins - 4mm buffer)
+4. **Examples:**
+   - With **qr_margin=0.5** (standard): 49mm available → 20 chars fit perfectly at 3.06mm
+   - With **qr_margin=2.0** (large): 46mm available → 20 chars at minimum 3.0mm (may slightly exceed by ~2mm)
    - "A" (1 char): 6.00mm (at maximum)
    - "HELLO" (5 chars): 6.00mm (at maximum)
-   - "berlinometer" (12 chars): 4.79mm (auto-scaled down)
+   - "berlinometer" (12 chars): 4.79mm (with qr_margin=2.0)
+   - "berlinometer.de" (15 chars): 3.83mm (with qr_margin=2.0)
+   - 20 characters: 3.06mm (with qr_margin=0.5, perfect fit)
 
 **Why These Values Work:**
 - char_width_factor=0.8 is conservative enough to handle font rendering variations
@@ -266,7 +268,7 @@ module text_label() {
   - OpenSCAD text rendering quirks
   - Font edge cases and kerning
   - Manufacturing tolerances in 3D printing
-- Result: Text guaranteed to fit within model boundaries for all 1-12 character strings
+- Result: Text guaranteed to fit within model boundaries for all 1-20 character strings
 
 **Code Location:**
 - `calculate_text_size()` method: generate_qr_model.py:121-152
@@ -500,7 +502,7 @@ Before committing changes:
 - [ ] Rectangle-text mode generates with text (54x64mm)
 - [ ] Pendant-text mode includes hole and text (~55x65mm)
 - [ ] Text field shows/hides correctly based on mode
-- [ ] Text validation works (required for text modes, max 12 chars)
+- [ ] Text validation works (required for text modes, max 20 chars)
 - [ ] Text renders correctly in STL (Liberation Mono Bold, 6mm, 1mm relief)
 - [ ] Text rotation checkbox shows/hides correctly (Rectangle+Text only)
 - [ ] Text rotation works correctly (0° and 180°)

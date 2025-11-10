@@ -12,7 +12,7 @@ Automatische Generierung von 3D-druckbaren QR-Code-Modellen aus URLs oder PNG/JP
   - Pendant mit Anhänger-Loch (55x61mm)
   - Rechteck mit Text (54x64mm)
   - Pendant mit Text (55x65mm)
-- **Text-Funktion**: Optional erhabener Text (max. 12 Zeichen) unter dem QR-Code
+- **Text-Funktion**: Optional erhabener Text (max. 20 Zeichen) unter dem QR-Code
 - **Dynamische Text-Größe**: Automatische Skalierung 3-6mm je nach Textlänge - passt immer perfekt!
 - **Text-Rotation**: 180° Drehung für bessere Lesbarkeit (automatisch bei Pendant+Text)
 - **Optimierte Größe**: QR-Code nutzt fast die gesamte Kartenfläche (minimaler Rand)
@@ -43,7 +43,7 @@ brew install openscad
 **GUI-Features:**
 - URL oder Bilddatei eingeben
 - Modus wählen (Square/Pendant/Rectangle+Text/Pendant+Text)
-- Optional: Text eingeben (max. 12 Zeichen)
+- Optional: Text eingeben (max. 20 Zeichen)
 - Parameter anpassen (Höhe, Margin, Relief, Eckenradius)
 - "Generate 3D Model" klicken
 - Fortschritt in Echtzeit verfolgen
@@ -80,7 +80,7 @@ brew install openscad
    - Pendant (with hole) - Mit Anhänger-Loch
    - Rectangle + Text (54x64mm) - Rechteck mit Textfeld
    - Pendant + Text (55x65mm) - Anhänger mit Textfeld
-4. **Text**: Bei Text-Modi: Text eingeben (max. 12 Zeichen)
+4. **Text**: Bei Text-Modi: Text eingeben (max. 20 Zeichen)
 5. **Text-Rotation** (nur bei Rectangle+Text): Optional "Rotate text 180°" aktivieren für umgedrehten Text
    - Bei Pendant+Text wird der Text automatisch um 180° gedreht
 6. **Parameter anpassen**:
@@ -209,7 +209,7 @@ Für die Generierung mehrerer Modelle auf einmal steht eine Batch-Funktion zur V
 |-----------|-------------|----------|
 | `input` | QR-Code-Bilddatei (PNG/JPG) oder URL | *erforderlich* |
 | `--mode` | Modus: `square`, `pendant`, `rectangle-text`, `pendant-text` | `square` |
-| `--text`, `-t` | Text unter QR-Code (max. 12 Zeichen, nur für *-text Modi) | *(leer)* |
+| `--text`, `-t` | Text unter QR-Code (max. 20 Zeichen, nur für *-text Modi) | *(leer)* |
 | `--text-rotation` | Text um 180° drehen (0 oder 180, auto bei pendant-text) | `0` |
 | `--output`, `-o` | Output-Verzeichnis | `generated` |
 | `--name`, `-n` | Basisname für Ausgabedateien | *abgeleitet von Input* |
@@ -257,7 +257,7 @@ Für die Generierung mehrerer Modelle auf einmal steht eine Batch-Funktion zur V
 - **Ränder**: 0.5mm rundum
 - **QR-Code-Bereich**: ~53 x 53 mm
 - **QR-Relief**: 1mm erhaben
-- **Text**: Erhaben (1mm), dynamisch 3-6mm hoch (automatisch skaliert), max. 12 Zeichen
+- **Text**: Erhaben (1mm), dynamisch 3-6mm hoch (automatisch skaliert), max. 20 Zeichen
 - **Text-Abstand**: 2mm unter QR-Code
 - **Font**: Liberation Mono Bold (Monospace)
 - **Verwendung**: Visitenkarten, beschriftete Etiketten, personalisierte Karten
@@ -281,7 +281,7 @@ Für die Generierung mehrerer Modelle auf einmal steht eine Batch-Funktion zur V
 - **Loch**: ⌀5mm, 6mm vom oberen Rand
 - **QR-Code-Bereich**: ~54 x 54 mm
 - **QR-Relief**: 1mm erhaben
-- **Text**: Erhaben (1mm), dynamisch 3-6mm hoch (automatisch skaliert), max. 12 Zeichen
+- **Text**: Erhaben (1mm), dynamisch 3-6mm hoch (automatisch skaliert), max. 20 Zeichen
 - **Text-Abstand**: 2mm unter QR-Code
 - **Font**: Liberation Mono Bold (Monospace)
 - **Verwendung**: Personalisierte Schlüsselanhänger, beschriftete Gepäckanhänger

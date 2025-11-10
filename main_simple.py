@@ -261,8 +261,8 @@ class SimpleMainWindow(QMainWindow):
         text_layout = QHBoxLayout()
         text_layout.addWidget(QLabel("Text:"))
         self.text_field = QLineEdit()
-        self.text_field.setPlaceholderText("Enter text (max 12 chars)")
-        self.text_field.setMaxLength(12)
+        self.text_field.setPlaceholderText("Enter text (max 20 chars)")
+        self.text_field.setMaxLength(20)
         text_layout.addWidget(self.text_field)
         mode_layout.addLayout(text_layout)
 
