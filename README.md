@@ -2,6 +2,8 @@
 
 Automatische Generierung von 3D-druckbaren QR-Code-Modellen aus URLs oder PNG/JPG-Bildern - mit Desktop-GUI oder Kommandozeile.
 
+![QR Code 3D Generator GUI](docs/images/screenshot-v0.0.1.png)
+
 ## Features
 
 - **Desktop GUI**: Benutzerfreundliche Anwendung mit Echtzeit-Vorschau der Parameter
