@@ -21,6 +21,23 @@ Automatische Generierung von 3D-druckbaren QR-Code-Modellen aus URLs oder PNG/JP
 - **Performance**: ~1-2 Minuten pro Modell dank intelligentem Pixel-Sampling
 - **Automatische STL-Generierung**: Direkt druckfertig
 
+### 🌟 Intelligente Text-Skalierung
+
+Der Generator verwendet eine **intelligente dynamische Text-Skalierung**, die automatisch die optimale Schriftgröße berechnet:
+
+- **Kurze Texte** (1-7 Zeichen): Maximale Größe von 6mm für optimale Lesbarkeit
+- **Mittlere Texte** (8-14 Zeichen): Automatisch skaliert zwischen 4-5mm
+- **Lange Texte** (15-20 Zeichen): Skaliert auf minimum 3mm, passt perfekt!
+
+**Beispiele:**
+- "LOGO" → 6.00mm (groß und gut lesbar)
+- "berlinometer" → 4.79mm (ausgeglichen)
+- "berlinometer.de" → 3.83mm (kompakt, passt perfekt)
+- 20 Zeichen → 3.06mm (kleiner, aber lesbar)
+
+**Technischer Hintergrund:**
+Die Berechnung berücksichtigt die Kartengröße, QR-Margins und einen 4mm Sicherheitspuffer. Mit den Standard-Einstellungen (qr_margin=0.5mm) passen alle Texte von 1-20 Zeichen **garantiert** innerhalb der Modellgrenzen - kein Überlauf, keine manuellen Anpassungen nötig!
+
 ## Schnellstart
 
 ### 1. Installation (einmalig)
