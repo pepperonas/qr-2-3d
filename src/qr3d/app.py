@@ -215,6 +215,7 @@ class SimpleMainWindow(QMainWindow):
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
         layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(10)  # Reduce spacing between sections
 
         # Input section
         input_group = QGroupBox("Input")
@@ -240,6 +241,9 @@ class SimpleMainWindow(QMainWindow):
         input_layout.addLayout(name_layout)
 
         input_group.setLayout(input_layout)
+        # Allow input section to expand
+        from PyQt6.QtWidgets import QSizePolicy
+        input_group.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         layout.addWidget(input_group)
 
         # Mode selection
@@ -344,6 +348,8 @@ class SimpleMainWindow(QMainWindow):
         self.current_size_scale = 1.0
 
         mode_group.setLayout(mode_layout)
+        # Allow mode section to expand
+        mode_group.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         layout.addWidget(mode_group)
 
         # Parameters section - 2x2 Grid Layout
@@ -387,6 +393,8 @@ class SimpleMainWindow(QMainWindow):
         params_layout.addWidget(self.corner_spin, 1, 3)
 
         params_group.setLayout(params_layout)
+        # Allow parameters section to expand
+        params_group.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         layout.addWidget(params_group)
 
         # Thickness presets
@@ -446,6 +454,8 @@ class SimpleMainWindow(QMainWindow):
         thickness_layout.addWidget(thick_btn)
 
         thickness_group.setLayout(thickness_layout)
+        # Allow thickness presets section to expand
+        thickness_group.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         layout.addWidget(thickness_group)
 
         # Generate button and Help button row
@@ -496,6 +506,8 @@ class SimpleMainWindow(QMainWindow):
         # Batch processing section
         batch_group = QGroupBox("Batch Processing")
         batch_layout = QVBoxLayout()
+        batch_layout.setSpacing(8)  # Compact spacing within batch section
+        batch_layout.setContentsMargins(10, 10, 10, 10)  # Reduce internal margins
 
         # Batch status label
         self.batch_status_label = QLabel("Checking batch configuration...")
@@ -525,6 +537,9 @@ class SimpleMainWindow(QMainWindow):
         batch_layout.addWidget(self.batch_btn)
 
         batch_group.setLayout(batch_layout)
+        # Set size policy to prevent excessive vertical expansion
+        from PyQt6.QtWidgets import QSizePolicy
+        batch_group.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         layout.addWidget(batch_group)
 
         # Progress bar
