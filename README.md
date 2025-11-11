@@ -48,15 +48,22 @@ Die Berechnung berücksichtigt die Kartengröße, QR-Margins und einen 4mm Siche
 # OpenSCAD installieren (für STL-Export)
 brew install openscad
 
-# Projekt-Setup ist bereits fertig!
+# Python-Package installieren (editable mode)
+pip install -e .
+
+# Alternativ: Virtual Environment nutzen
 # Python 3.13 Virtual Environment in venv-gui/
-# Alle Dependencies bereits installiert
+# ./venv-gui/bin/pip install -e .
 ```
 
 ### 2. GUI-Anwendung starten (empfohlen)
 
 ```bash
-./venv-gui/bin/python main_simple.py
+# Nach Installation mit pip:
+qr3d-gui
+
+# Oder mit Virtual Environment:
+./venv-gui/bin/python -m qr3d.app
 ```
 
 **GUI-Features:**
@@ -73,13 +80,17 @@ brew install openscad
 #### Von URL (einfachster Weg):
 
 ```bash
-./qr_generate.sh https://ihre-website.de --mode pendant --name meine-site
+# Mit Shell-Script:
+./scripts/qr_generate.sh https://ihre-website.de --mode pendant --name meine-site
+
+# Oder direkt mit Python (nach pip install -e .):
+qr3d https://ihre-website.de --mode pendant --name meine-site
 ```
 
 #### Von Bilddatei:
 
 ```bash
-./qr_generate.sh myqr.png --mode square
+./scripts/qr_generate.sh myqr.png --mode square
 ```
 
 ## Verwendung
@@ -88,7 +99,7 @@ brew install openscad
 
 **Start:**
 ```bash
-./venv-gui/bin/python main_simple.py
+./venv-gui/bin/python -m qr3d.app
 ```
 
 **Bedienung:**
@@ -116,7 +127,7 @@ brew install openscad
 Für die Generierung mehrerer Modelle auf einmal steht eine Batch-Funktion zur Verfügung:
 
 **Erstmalige Verwendung:**
-1. GUI starten: `./venv-gui/bin/python main_simple.py`
+1. GUI starten: `./venv-gui/bin/python -m qr3d.app`
 2. Im Bereich "Batch Processing" auf "Create Config Template" klicken
 3. Datei `batch/config.json` wird erstellt mit Beispiel-Konfiguration
 4. `batch/config.json` nach Wunsch anpassen (siehe unten)
@@ -177,49 +188,49 @@ Für die Generierung mehrerer Modelle auf einmal steht eine Batch-Funktion zur V
 
 **Basis:**
 ```bash
-./qr_generate.sh https://example.com
+./scripts/qr_generate.sh https://example.com
 ```
 
 **Mit Optionen:**
 ```bash
-./qr_generate.sh https://github.com/user/repo --name github --mode pendant
+./scripts/qr_generate.sh https://github.com/user/repo --name github --mode pendant
 ```
 
 **Website mit Parametern:**
 ```bash
-./qr_generate.sh "https://example.com/profile?user=123" --name profile
+./scripts/qr_generate.sh "https://example.com/profile?user=123" --name profile
 ```
 
 **Mit Text (Rectangle+Text):**
 ```bash
-./qr_generate.sh https://example.com --mode rectangle-text --text "AIMPLICITY" --name mycard
+./scripts/qr_generate.sh https://example.com --mode rectangle-text --text "AIMPLICITY" --name mycard
 ```
 
 **Mit Text (Pendant+Text):**
 ```bash
-./qr_generate.sh https://github.com/user --mode pendant-text --text "GitHub" --name github
+./scripts/qr_generate.sh https://github.com/user --mode pendant-text --text "GitHub" --name github
 ```
 
 **Mit rotiertem Text (Rectangle+Text):**
 ```bash
-./venv-gui/bin/python generate_qr_model.py https://example.com --mode rectangle-text --text "ROTATED" --text-rotation 180 --name mycard-rot
+./venv-gui/bin/python -m qr3d https://example.com --mode rectangle-text --text "ROTATED" --text-rotation 180 --name mycard-rot
 ```
 
 #### Von Bilddatei:
 
 **Quadratisch:**
 ```bash
-./qr_generate.sh myqr.png
+./scripts/qr_generate.sh myqr.png
 ```
 
 **Anhänger:**
 ```bash
-./qr_generate.sh celox.png --mode pendant
+./scripts/qr_generate.sh celox.png --mode pendant
 ```
 
 **Mit Custom Output:**
 ```bash
-./qr_generate.sh qrcode.jpg --mode square --output ./stl_files
+./scripts/qr_generate.sh qrcode.jpg --mode square --output ./stl_files
 ```
 
 ### Parameter
@@ -388,7 +399,7 @@ Das System nutzt intelligentes **Pixel-Sampling** für optimale Performance:
 
 ### Option A: GUI (empfohlen für Einsteiger)
 
-1. GUI starten: `./venv-gui/bin/python main_simple.py`
+1. GUI starten: `./venv-gui/bin/python -m qr3d.app`
 2. URL eingeben: `https://ihre-website.de`
 3. Modus wählen: Pendant
 4. Parameter prüfen (oder Standardwerte nutzen)
@@ -399,7 +410,7 @@ Das System nutzt intelligentes **Pixel-Sampling** für optimale Performance:
 ### Option B: Kommandozeile (schnell für Profis)
 
 ```bash
-./qr_generate.sh https://ihre-website.de --mode pendant --name meine-site
+./scripts/qr_generate.sh https://ihre-website.de --mode pendant --name meine-site
 # Warten ~1-2 Minuten
 # → generated/meine-site-model.stl ist fertig!
 ```
@@ -459,16 +470,25 @@ Die `.scad`-Datei kann in OpenSCAD geöffnet werden für:
 
 ```
 QRs/
-├── main_simple.py             # Desktop GUI (START HIER!)
-├── generate_qr_model.py       # Backend-Generator
-├── qr_generate.sh             # CLI-Wrapper
+├── src/
+│   └── qr3d/                  # Python Package
+│       ├── __init__.py        # Package Init (Version 0.1.0)
+│       ├── app.py             # Desktop GUI (START HIER!)
+│       ├── generator.py       # Backend-Generator
+│       ├── __main__.py        # CLI Entry Point
+│       └── gui/
+│           ├── __init__.py
+│           └── viewer_widget.py  # 3D-Viewer Komponente
+├── scripts/
+│   └── qr_generate.sh         # Shell-Wrapper für CLI
+├── tests/                     # Test Suite (pytest)
+│   ├── test_generator.py
+│   └── test_version.py
 ├── venv-gui/                  # Python 3.13 Virtual Environment
 ├── generated/                 # Alle generierten Dateien
-├── ui/
-│   ├── __init__.py
-│   └── viewer_widget.py       # 3D-Viewer Komponente
-├── requirements.txt           # Basis-Dependencies
-├── requirements-gui.txt       # GUI-Dependencies (PyQt6)
+├── pyproject.toml             # Package-Konfiguration
+├── pytest.ini                 # Test-Konfiguration
+├── qr3d.spec                  # PyInstaller Build-Spec
 ├── README.md                  # Diese Datei
 ├── INSTALL.md                 # Installations-Anleitung
 └── CLAUDE.md                  # KI-Kontext für Claude Code

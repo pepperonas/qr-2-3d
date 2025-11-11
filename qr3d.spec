@@ -22,15 +22,21 @@ hiddenimports = [
     'PIL.ImageQt',
     'qrcode',
     'qrcode.image.pil',
+    'qr3d',
+    'qr3d.app',
+    'qr3d.generator',
+    'qr3d.gui',
+    'qr3d.gui.viewer_widget',
 ]
 
 a = Analysis(
-    ['main_simple.py'],
-    pathex=[],
+    ['src/qr3d/app.py'],
+    pathex=['src'],
     binaries=[],
     datas=[
-        ('__version__.py', '.'),
-        ('generate_qr_model.py', '.'),
+        ('src/qr3d/__init__.py', 'qr3d'),
+        ('src/qr3d/generator.py', 'qr3d'),
+        ('src/qr3d/gui/', 'qr3d/gui'),
         ('README.md', '.'),
         ('LICENSE', '.'),
     ] + pyqt6_datas,
@@ -95,8 +101,8 @@ if sys.platform == 'darwin':
         info_plist={
             'CFBundleName': 'QR Code 3D Generator',
             'CFBundleDisplayName': 'QR Code 3D Generator',
-            'CFBundleVersion': '0.0.1',
-            'CFBundleShortVersionString': '0.0.1',
+            'CFBundleVersion': '0.1.0',
+            'CFBundleShortVersionString': '0.1.0',
             'NSHighResolutionCapable': 'True',
             'LSMinimumSystemVersion': '10.13.0',
         },

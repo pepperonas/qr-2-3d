@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qr-3d-generator"
-version = "0.0.1"
+version = "0.1.0"
 description = "Desktop application and CLI tool for generating 3D-printable QR code models from URLs or images"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -32,4 +32,8 @@ dev = [
 ]
 
 [project.scripts]
-qr3d = "main_simple:main"
+qr3d-gui = "qr3d.app:main"
+qr3d = "qr3d.generator:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

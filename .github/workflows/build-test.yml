@@ -55,8 +55,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-gui.txt
+        pip install -e .
         pip install pytest pyinstaller
 
     - name: Run tests
@@ -65,9 +64,9 @@ jobs:
 
     - name: Test imports
       run: |
-        python -c "from __version__ import __version__; print(f'Version: {__version__}')"
-        python -c "import main_simple; print('GUI imports successful')"
-        python -c "from generate_qr_model import QRModelGenerator; print('Generator imports successful')"
+        python -c "from qr3d import __version__; print(f'Version: {__version__}')"
+        python -c "from qr3d.app import SimpleMainWindow; print('GUI imports successful')"
+        python -c "from qr3d.generator import QRModelGenerator; print('Generator imports successful')"
 
   build-check:
     name: Build Check on ${{ matrix.os }}
@@ -91,8 +90,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-gui.txt
+        pip install -e .
         pip install pyinstaller
 
     - name: Clean previous builds
