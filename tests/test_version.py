@@ -1,7 +1,7 @@
 """Tests for version module"""
 
 import re
-from __version__ import __version__, get_version
+from qr3d import __version__
 
 
 def test_version_exists():
@@ -18,13 +18,6 @@ def test_version_format():
     assert re.match(pattern, __version__), f"Version '{__version__}' does not match semantic versioning format"
 
 
-def test_get_version_function():
-    """Test that get_version() returns the correct version"""
-    version = get_version()
-    assert version == __version__
-    assert isinstance(version, str)
-
-
-def test_version_is_001():
-    """Test that current version is 0.0.1"""
-    assert __version__ == "0.0.1"
+def test_version_is_010():
+    """Test that current version is 0.1.0"""
+    assert __version__ == "0.1.0"

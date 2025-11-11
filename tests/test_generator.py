@@ -4,7 +4,7 @@ import os
 import tempfile
 from pathlib import Path
 import pytest
-from generate_qr_model import QRModelGenerator
+from qr3d.generator import QRModelGenerator
 
 
 def test_is_url():

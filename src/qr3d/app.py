@@ -18,8 +18,8 @@ from PyQt6.QtWidgets import (
     QGroupBox, QFormLayout, QGridLayout, QProgressBar, QFileDialog, QMessageBox, QCheckBox
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
-from generate_qr_model import QRModelGenerator
-from __version__ import __version__
+from qr3d.generator import QRModelGenerator
+from qr3d import __version__
 
 
 class GeneratorThread(QThread):
