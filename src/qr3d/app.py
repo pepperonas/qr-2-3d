@@ -205,7 +205,7 @@ class SimpleMainWindow(QMainWindow):
     def setup_ui(self):
         """Setup the UI"""
         self.setWindowTitle(f"QR Code 3D Generator v{__version__}")
-        self.setMinimumSize(600, 800)
+        self.setMinimumSize(600, 700)
 
         # Central widget
         central = QWidget()
@@ -445,7 +445,9 @@ class SimpleMainWindow(QMainWindow):
         thickness_group.setLayout(thickness_layout)
         layout.addWidget(thickness_group)
 
-        # Generate button
+        # Generate button and Help button row
+        button_row = QHBoxLayout()
+
         self.generate_btn = QPushButton("Generate 3D Model")
         self.generate_btn.setStyleSheet("""
             QPushButton {
@@ -464,7 +466,29 @@ class SimpleMainWindow(QMainWindow):
             }
         """)
         self.generate_btn.clicked.connect(self.generate_model)
-        layout.addWidget(self.generate_btn)
+        button_row.addWidget(self.generate_btn)
+
+        # Help button
+        help_btn = QPushButton("?")
+        help_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #6c757d;
+                color: white;
+                font-size: 16px;
+                font-weight: bold;
+                padding: 12px;
+                border-radius: 6px;
+                min-width: 45px;
+                max-width: 45px;
+            }
+            QPushButton:hover {
+                background-color: #5a6268;
+            }
+        """)
+        help_btn.clicked.connect(self.show_help_dialog)
+        button_row.addWidget(help_btn)
+
+        layout.addLayout(button_row)
 
         # Batch processing section
         batch_group = QGroupBox("Batch Processing")
@@ -511,26 +535,6 @@ class SimpleMainWindow(QMainWindow):
         self.status_label.setStyleSheet("padding: 10px; color: #666; font-size: 12px;")
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.status_label)
-
-        # Info section
-        info_label = QLabel(
-            "Note: This is simplified mode without 3D preview.\n\n"
-            "Tips:\n"
-            "• Enter a URL to generate QR code automatically\n"
-            "• Or select a PNG/JPG image file\n"
-            "• Use size buttons (Klein/Mittel/Groß) to scale the model\n"
-            "• Current dimensions are shown below the model type\n"
-            "• Generated files will be in 'generated' folder"
-        )
-        info_label.setStyleSheet("""
-            background-color: #f0f0f0;
-            padding: 15px;
-            border-radius: 5px;
-            font-size: 11px;
-            color: #555;
-        """)
-        info_label.setWordWrap(True)
-        layout.addWidget(info_label)
 
         # Initialize size label
         self.update_size_label()
@@ -704,6 +708,62 @@ class SimpleMainWindow(QMainWindow):
             return True, 0, f"JSON Error: {str(e)}"
         except Exception as e:
             return True, 0, f"Error: {str(e)}"
+
+    def show_help_dialog(self):
+        """Show help dialog with usage tips"""
+        help_text = """<h2>QR Code 3D Model Generator</h2>
+
+<p>Dieses Tool generiert 3D-druckbare QR-Code-Modelle aus URLs oder Bildern.</p>
+
+<h3>Eingabe:</h3>
+<ul>
+<li><b>URL eingeben:</b> QR-Code wird automatisch generiert</li>
+<li><b>Oder Bilddatei auswählen:</b> PNG/JPG Dateien werden unterstützt</li>
+</ul>
+
+<h3>Model Type:</h3>
+<ul>
+<li><b>Square:</b> Quadratisches Modell</li>
+<li><b>Pendant (with hole):</b> Mit Loch für Schlüsselanhänger</li>
+<li><b>Rectangle + Text:</b> Rechteckig mit Textfeld</li>
+<li><b>Pendant + Text:</b> Mit Loch und Textfeld</li>
+</ul>
+
+<h3>Größe:</h3>
+<ul>
+<li><b>Klein (0.5x):</b> Halbe Größe - spart Material</li>
+<li><b>Mittel (1x):</b> Standard-Größe (empfohlen)</li>
+<li><b>Groß (2x):</b> Doppelte Größe - bessere Scannbarkeit</li>
+</ul>
+<p><i>Aktuelle Dimensionen werden unter dem Model Type angezeigt.</i></p>
+
+<h3>Dicken-Presets:</h3>
+<ul>
+<li><b>Dünn (0.5mm):</b> Schneller Druck, weniger Material</li>
+<li><b>Mittel (1.0mm):</b> Ausgewogen</li>
+<li><b>Dick (1.5mm):</b> Stabiler, besser lesbar</li>
+</ul>
+
+<h3>Ausgabe:</h3>
+<p>Generierte Dateien werden im <b>'generated'</b> Ordner gespeichert:</p>
+<ul>
+<li>.stl Datei für 3D-Druck</li>
+<li>.scad Datei (OpenSCAD Quellcode)</li>
+<li>.json Datei (Metadaten)</li>
+<li>.png Datei (QR-Code, falls von URL generiert)</li>
+</ul>
+
+<h3>Performance:</h3>
+<p>Mit OpenSCAD 2025+ dauert die Generierung nur ~1 Sekunde!</p>
+"""
+
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Hilfe - QR Code 3D Generator")
+        msg.setTextFormat(Qt.TextFormat.RichText)
+        msg.setText(help_text)
+        msg.setIcon(QMessageBox.Icon.Information)
+        msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg.exec()
 
     def update_batch_status(self):
         """Update batch status label"""
