@@ -22,6 +22,8 @@ Automatische Generierung von 3D-druckbaren QR-Code-Modellen aus URLs oder PNG/JP
 - **Abgerundete Ecken**: 2mm Radius für professionelles Design
 - **Performance**: ~1-2 Minuten pro Modell dank intelligentem Pixel-Sampling
 - **Automatische STL-Generierung**: Direkt druckfertig
+- **JSON-Metadata-Export**: Jedes Modell erhält eine JSON-Datei mit vollständiger Konfiguration
+- **Organisierte Ausgabe**: Jedes Modell in eigenem Unterordner mit allen Dateien (PNG, SCAD, STL, JSON)
 
 ### 🌟 Intelligente Text-Skalierung
 
@@ -120,7 +122,36 @@ qr3d https://ihre-website.de --mode pendant --name meine-site
    - Corner Radius: 0-5mm (Standard: 2mm)
 7. **Generate 3D Model** klicken
 8. Warten (~1-2 Minuten)
-9. ✅ Erfolg! Dateien in `generated/` Ordner
+9. ✅ Erfolg! Dateien in `generated/model-name/` Ordner
+
+### Ausgabe-Organisation
+
+Jedes generierte Modell erhält einen eigenen Unterordner in `generated/`:
+
+```
+generated/
+├── meine-site/
+│   ├── meine-site.png          # QR-Code Bild
+│   ├── meine-site.json         # Konfigurations-Metadaten
+│   ├── meine-site.scad         # OpenSCAD Quellcode
+│   └── meine-site.stl          # 3D-Modell (druckfertig)
+└── github-pendant/
+    ├── github-pendant.png
+    ├── github-pendant.json
+    ├── github-pendant.scad
+    └── github-pendant.stl
+```
+
+**JSON-Metadaten** enthalten:
+- Zeitstempel und Version
+- Verwendeter Modus (square/pendant/rectangle-text/pendant-text)
+- QR-Eingabe (URL oder Dateiname)
+- Alle Dimensionen (Kartengröße, QR-Größe, Pixelgröße, Grid)
+- Alle Parameter (Margins, Relief, Eckenradius)
+- Modus-spezifische Daten (z.B. Loch-Durchmesser bei Pendant)
+- Text-Daten (Inhalt, Größe, Rotation bei Text-Modi)
+
+**Vorteil:** Einfache Reproduktion mit exakt denselben Einstellungen!
 
 ### Batch-Verarbeitung (GUI)
 

@@ -34,7 +34,13 @@ QRs/
 │   ├── test_generator.py      # Generator tests
 │   └── test_version.py        # Version tests
 ├── venv-gui/                  # Python 3.13 virtual environment
-├── generated/                 # Output directory for all generated files
+├── generated/                 # Output directory (subdirectories per model)
+│   ├── model-name/            # Each model in own subdirectory
+│   │   ├── model-name.png     # QR code image
+│   │   ├── model-name.json    # Configuration metadata
+│   │   ├── model-name.scad    # OpenSCAD source
+│   │   └── model-name.stl     # 3D model (printable)
+│   └── ...
 ├── batch/                     # Batch processing (user-specific, gitignored)
 │   └── config.json            # Batch configuration file
 ├── pyproject.toml             # Package configuration (setuptools, version, entry points)
@@ -63,8 +69,20 @@ Core generator that:
 - `generate_qr_image(data, output_path)` - Static method to create QR codes
 - `load_and_process_image()` - Image processing with sampling
 - `generate_openscad(matrix, dimensions)` - SCAD code generation
+- `create_metadata_json(dimensions, matrix, qr_input)` - Generate JSON metadata (NEW)
 - `export_stl(scad_path, stl_path)` - OpenSCAD CLI invocation
-- `generate()` - Main workflow orchestration
+- `generate(qr_input)` - Main workflow orchestration
+
+**Workflow (generate method):**
+1. Create model-specific subdirectory (`generated/model-name/`)
+2. Load and process QR code image
+3. Calculate model dimensions
+4. Move/place QR PNG in subdirectory
+5. **Generate and save JSON metadata** (before STL for fast access)
+6. Generate OpenSCAD code
+7. Save SCAD file
+8. Export STL (time-consuming, runs last)
+9. Return paths: (scad_file, stl_file, json_file)
 
 **Default Parameters:**
 ```python
