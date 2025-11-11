@@ -203,20 +203,14 @@ class SimpleMainWindow(QMainWindow):
 
     def setup_ui(self):
         """Setup the UI"""
-        self.setWindowTitle(f"QR Code 3D Generator v{__version__} (Simple Mode)")
-        self.setMinimumSize(600, 850)
+        self.setWindowTitle(f"QR Code 3D Generator v{__version__}")
+        self.setMinimumSize(600, 800)
 
         # Central widget
         central = QWidget()
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
         layout.setContentsMargins(20, 20, 20, 20)
-
-        # Title
-        title = QLabel("QR Code 3D Model Generator")
-        title.setStyleSheet("font-size: 18px; font-weight: bold; padding: 10px;")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(title)
 
         # Input section
         input_group = QGroupBox("Input")
