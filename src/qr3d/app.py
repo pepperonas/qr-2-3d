@@ -46,19 +46,18 @@ class GeneratorThread(QThread):
                 # Generate QR code from URL
                 self.progress.emit(f"Generating QR code from URL...")
 
-                # Create QR code image in generated folder
+                # Create model subdirectory and generate QR code there
                 from pathlib import Path
                 import os
 
-                output_dir = Path("generated")
-                os.makedirs(output_dir, exist_ok=True)
+                model_dir = Path("generated") / self.output_name
+                model_dir.mkdir(parents=True, exist_ok=True)
 
-                qr_filename = f"{self.output_name}.png"
-                qr_path = output_dir / qr_filename
+                qr_path = model_dir / f"{self.output_name}.png"
 
                 QRModelGenerator.generate_qr_image(self.input_path, qr_path)
                 actual_input = str(qr_path)
-                self.progress.emit(f"QR code created: {qr_filename}")
+                self.progress.emit(f"QR code created: {qr_path}")
 
             self.progress.emit("Generating 3D model...")
 
@@ -134,11 +133,12 @@ class BatchGeneratorThread(QThread):
                     actual_input = url
                     if QRModelGenerator.is_url(url):
                         self.progress.emit(f"Generating QR code from URL...")
-                        output_dir = Path("generated")
-                        os.makedirs(output_dir, exist_ok=True)
 
-                        qr_filename = f"{name}.png"
-                        qr_path = output_dir / qr_filename
+                        # Create model subdirectory and generate QR code there
+                        model_dir = Path("generated") / name
+                        model_dir.mkdir(parents=True, exist_ok=True)
+
+                        qr_path = model_dir / f"{name}.png"
                         QRModelGenerator.generate_qr_image(url, qr_path)
                         actual_input = str(qr_path)
 

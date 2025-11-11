@@ -451,6 +451,12 @@ module qr_pattern() {{
         print(f"Processing: {self.image_path.name}")
         print(f"Mode: {self.mode}")
 
+        # Create model-specific subdirectory first
+        base_name = self.image_path.stem  # filename without extension
+        model_dir = self.output_dir / base_name
+        model_dir.mkdir(parents=True, exist_ok=True)
+        print(f"→ Output directory: {model_dir}")
+
         # Load and process image
         print("→ Loading image...")
         matrix, width, height = self.load_and_process_image()
@@ -460,41 +466,35 @@ module qr_pattern() {{
         dimensions = self.calculate_dimensions(width)
         print(f"  Model size: {dimensions['card_width']}x{dimensions['card_length']}x{self.card_height}mm")
 
-        # Create model-specific subdirectory
-        base_name = self.image_path.stem  # filename without extension
-        model_dir = self.output_dir / base_name
-        model_dir.mkdir(parents=True, exist_ok=True)
-        print(f"→ Output directory: {model_dir}")
-
-        # Generate OpenSCAD code
-        print("→ Generating OpenSCAD code...")
-        scad_code = self.generate_openscad(matrix, dimensions)
-
         # Determine output filenames (all in model subdirectory)
         qr_file = model_dir / f"{base_name}.png"
         scad_file = model_dir / f"{base_name}.scad"
         stl_file = model_dir / f"{base_name}.stl"
         json_file = model_dir / f"{base_name}.json"
 
-        # Copy QR code image to model directory (if it's not already there)
+        # Move QR code image to model directory (if it's not already there)
         if self.image_path.parent != model_dir:
             import shutil
-            shutil.copy2(self.image_path, qr_file)
-            print(f"✓ QR code copied to: {qr_file}")
+            shutil.move(str(self.image_path), str(qr_file))
+            print(f"✓ QR code moved to: {qr_file}")
 
-        # Save SCAD file
-        self.save_scad_file(scad_code, scad_file)
-
-        # Try to export STL
-        print("→ Exporting STL...")
-        self.export_stl(scad_file, stl_file)
-
-        # Create metadata JSON
+        # Create metadata JSON first (before time-consuming STL generation)
         print("→ Creating metadata JSON...")
         metadata = self.create_metadata_json(dimensions, matrix, qr_input=qr_input)
         with open(json_file, 'w', encoding='utf-8') as f:
             json.dump(metadata, f, indent=2, ensure_ascii=False)
         print(f"✓ Metadata saved: {json_file}")
+
+        # Generate OpenSCAD code
+        print("→ Generating OpenSCAD code...")
+        scad_code = self.generate_openscad(matrix, dimensions)
+
+        # Save SCAD file
+        self.save_scad_file(scad_code, scad_file)
+
+        # Try to export STL (most time-consuming step)
+        print("→ Exporting STL...")
+        self.export_stl(scad_file, stl_file)
 
         print(f"\n✅ Done! All files in: {model_dir}")
         return scad_file, stl_file, json_file
@@ -538,15 +538,18 @@ Examples:
         # Generate QR code from URL
         print(f"📡 Generating QR code from URL: {args.input}")
 
-        # Determine output filename
+        # Determine output name
         if args.name:
-            qr_filename = f"{args.name}.png"
+            base_name = args.name
         else:
             # Create safe filename from URL
-            safe_name = re.sub(r'[^\w\-]', '_', args.input)[:50]
-            qr_filename = f"{safe_name}.png"
+            base_name = re.sub(r'[^\w\-]', '_', args.input)[:50]
 
-        qr_path = Path(args.output) / qr_filename
+        # Create model subdirectory and generate QR there
+        model_dir = Path(args.output) / base_name
+        model_dir.mkdir(parents=True, exist_ok=True)
+
+        qr_path = model_dir / f"{base_name}.png"
         QRModelGenerator.generate_qr_image(args.input, qr_path)
         print(f"✓ QR code saved: {qr_path}")
         input_path = str(qr_path)
