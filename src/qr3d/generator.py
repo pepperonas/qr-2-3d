@@ -488,6 +488,12 @@ module qr_pattern() {{
 
         # Create model-specific subdirectory first
         base_name = self.image_path.stem  # filename without extension
+
+        # Add size and thickness to base name
+        size_label = "small" if self.size_scale == 0.5 else "large" if self.size_scale == 2.0 else "medium"
+        thickness_label = "thin" if self.card_height <= 0.6 else "thick" if self.card_height >= 1.4 else "medium"
+        base_name = f"{base_name}-{size_label}-{thickness_label}"
+
         model_dir = self.output_dir / base_name
         model_dir.mkdir(parents=True, exist_ok=True)
         print(f"→ Output directory: {model_dir}")
