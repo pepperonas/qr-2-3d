@@ -389,7 +389,8 @@ module qr_pattern() {{
             "parameters": {
                 "qr_margin_mm": self.qr_margin,
                 "qr_relief_mm": self.qr_relief,
-                "corner_radius_mm": self.corner_radius
+                "corner_radius_mm": self.corner_radius,
+                "size_scale": self.size_scale
             }
         }
 

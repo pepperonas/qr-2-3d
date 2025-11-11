@@ -194,6 +194,9 @@ class SimpleMainWindow(QMainWindow):
         self.batch_config_path = Path("batch/config.json")
         self.setup_ui()
 
+        # Enable drag and drop for JSON config files
+        self.setAcceptDrops(True)
+
         # Setup timer for batch status updates (every 5 seconds)
         self.batch_status_timer = QTimer(self)
         self.batch_status_timer.timeout.connect(self.update_batch_status)
@@ -917,6 +920,86 @@ class SimpleMainWindow(QMainWindow):
             self.status_label.setText(f"⚠️ {message}")
             self.status_label.setStyleSheet("padding: 10px; color: #cc6600; font-size: 12px; font-weight: bold;")
             QMessageBox.warning(self, "Batch Completed with Issues", message)
+
+    def dragEnterEvent(self, event):
+        """Handle drag enter event - accept JSON files"""
+        if event.mimeData().hasUrls():
+            urls = event.mimeData().urls()
+            if len(urls) == 1 and urls[0].toLocalFile().endswith('.json'):
+                event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        """Handle drop event - load settings from JSON file"""
+        urls = event.mimeData().urls()
+        if urls:
+            json_path = urls[0].toLocalFile()
+            if json_path.endswith('.json'):
+                try:
+                    self.load_settings_from_json(json_path)
+                    self.status_label.setText(f"✅ Settings loaded from: {Path(json_path).name}")
+                    self.status_label.setStyleSheet("padding: 10px; color: #008800; font-size: 12px;")
+                except Exception as e:
+                    QMessageBox.warning(self, "Load Error", f"Failed to load settings:\n{str(e)}")
+
+    def load_settings_from_json(self, json_path: str):
+        """Load all settings from a JSON metadata file"""
+        import json
+
+        with open(json_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+
+        # Load URL/Input
+        if 'qr_input' in config:
+            self.input_field.setText(config['qr_input'])
+
+        # Load mode
+        if 'mode' in config:
+            mode_map = {
+                'square': 0,
+                'pendant': 1,
+                'rectangle-text': 2,
+                'pendant-text': 3
+            }
+            if config['mode'] in mode_map:
+                self.mode_combo.setCurrentIndex(mode_map[config['mode']])
+
+        # Load parameters
+        params = config.get('parameters', {})
+        if 'card_height_mm' in config.get('dimensions', {}):
+            self.height_spin.setValue(config['dimensions']['card_height_mm'])
+        if 'qr_margin_mm' in params:
+            self.margin_spin.setValue(params['qr_margin_mm'])
+        if 'qr_relief_mm' in params:
+            self.relief_spin.setValue(params['qr_relief_mm'])
+        if 'corner_radius_mm' in params:
+            self.corner_spin.setValue(params['corner_radius_mm'])
+
+        # Load text settings (if text mode)
+        text_data = config.get('text', {})
+        if text_data:
+            if 'content' in text_data:
+                self.text_field.setText(text_data['content'])
+            if 'rotation_deg' in text_data:
+                self.text_rotation_checkbox.setChecked(text_data['rotation_deg'] == 180)
+
+        # Load size scale (if available in newer JSON files)
+        # For older files, try to infer from card_width
+        if 'size_scale' in params:
+            scale = params['size_scale']
+            self.current_size_scale = scale
+        else:
+            # Infer from card_width: 27.5=0.5x, 55=1x, 110=2x
+            card_width = config.get('dimensions', {}).get('card_width_mm', 55)
+            if card_width <= 28:
+                scale = 0.5
+            elif card_width >= 100:
+                scale = 2.0
+            else:
+                scale = 1.0
+            self.current_size_scale = scale
+
+        # Update size label
+        self.update_size_label()
 
 
 def main():
