@@ -566,6 +566,10 @@ class SimpleMainWindow(QMainWindow):
         is_rectangle_text = index == 2
         self.text_rotation_checkbox.setVisible(is_rectangle_text)
 
+        # Auto-check rotation checkbox for Rectangle+Text mode
+        if is_rectangle_text:
+            self.text_rotation_checkbox.setChecked(True)
+
         # Update size label
         self.update_size_label()
 
