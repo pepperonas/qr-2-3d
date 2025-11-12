@@ -46,15 +46,15 @@ jobs:
         body: |
           ## Qrly - QR Code 3D Generator v${{ steps.get_version.outputs.version }}
 
-          Generate 3D-printable QR code models from URLs or images with **bundled OpenSCAD 2025.01.24**.
+          Generate 3D-printable QR code models from URLs or images.
 
           ### ✨ What's New
 
-          - 🚀 **No external dependencies**: OpenSCAD 2025 is bundled with the app
           - ⚡ **Fast rendering**: OpenSCAD 2025 with fast-csg + Manifold engine (~1 second per model)
           - 📦 **Native installers**: DMG for macOS, EXE installer for Windows, AppImage for Linux
           - 🎯 **Text modes**: Add custom text labels to your QR codes
           - 🔄 **Batch processing**: Generate multiple models from JSON config
+          - 🖼️ **Professional icons**: Beautiful app icons on all platforms
 
           ### 📥 Downloads
 
@@ -62,23 +62,26 @@ jobs:
 
           | Platform | File | Installation |
           |----------|------|--------------|
-          | **macOS** | `Qrly-${{ steps.get_version.outputs.version }}-macOS.dmg` | Double-click DMG, drag to Applications |
-          | **Windows** | `Qrly-${{ steps.get_version.outputs.version }}-Windows-Setup.exe` | Run installer, follow wizard |
-          | **Linux** | `Qrly-${{ steps.get_version.outputs.version }}-Linux.AppImage` | Make executable: `chmod +x *.AppImage`, then run |
+          | **macOS** | `Qrly-${{ steps.get_version.outputs.version }}-macOS.dmg` | Double-click DMG, drag to Applications<br/>**Requires**: `brew install openscad` |
+          | **Windows** | `Qrly-${{ steps.get_version.outputs.version }}-Windows-Setup.exe` | Run installer (includes OpenSCAD) |
+          | **Linux** | `Qrly-${{ steps.get_version.outputs.version }}-Linux.AppImage` | `chmod +x *.AppImage`, then run<br/>**Requires**: `sudo apt install openscad` |
 
           ### 🎯 Features
 
           - **4 Modes**: Square, Pendant, Rectangle+Text, Pendant+Text
           - **Text Labels**: Add up to 20 characters under QR code (auto-scaled 3-6mm)
           - **Credit Card Size**: 55x55mm base (ISO 7810 standard)
-          - **OpenSCAD Bundled**: No separate installation needed
+          - **Easy Setup**: Windows bundles OpenSCAD; macOS/Linux: quick install via package manager
           - **Batch Generation**: Process multiple QR codes from JSON config
           - **Drag & Drop**: Load previous settings from JSON metadata files
 
           ### 📖 Quick Start
 
-          1. Download the installer for your platform
-          2. Install/run the application
+          1. **Install OpenSCAD** (if needed):
+             - macOS: `brew install openscad`
+             - Windows: Bundled with installer
+             - Linux: `sudo apt install openscad`
+          2. Download and install Qrly for your platform
           3. Enter a URL or select an image file
           4. Choose mode and adjust parameters
           5. Click "Generate STL" - done in ~1 second!
@@ -96,12 +99,14 @@ jobs:
 
           ---
 
-          _Built with ❤️ using Python 3.13, PyQt6, and OpenSCAD 2025.01.24_
+          **Note**: Windows build includes OpenSCAD 2025.01.24. macOS and Linux builds require separate OpenSCAD installation.
+
+          _Built with ❤️ using Python 3.13, PyQt6, and OpenSCAD 2025_
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-macos:
-    name: Build macOS with OpenSCAD
+    name: Build macOS (OpenSCAD not bundled)
     needs: create-release
     runs-on: macos-latest
 
@@ -114,21 +119,6 @@ jobs:
       with:
         python-version: '3.13'
 
-    - name: Download OpenSCAD 2025
-      run: |
-        echo "Downloading OpenSCAD ${{ env.OPENSCAD_VERSION }} for macOS..."
-        # Download latest snapshot from files.openscad.org
-        curl -L "https://files.openscad.org/snapshots/OpenSCAD-${{ env.OPENSCAD_VERSION }}.dmg" -o openscad.dmg
-
-        # Mount DMG and extract OpenSCAD.app
-        hdiutil attach openscad.dmg
-        mkdir -p openscad_bundle
-        cp -R /Volumes/OpenSCAD/OpenSCAD.app openscad_bundle/
-        hdiutil detach /Volumes/OpenSCAD
-        rm openscad.dmg
-
-        echo "✓ OpenSCAD extracted to openscad_bundle/"
-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -137,6 +127,7 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
+        echo "Building Qrly.app (OpenSCAD not bundled - users install separately)"
         pyinstaller qrly.spec --clean --noconfirm
         ls -la dist/
 
@@ -310,7 +301,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-linux:
-    name: Build Linux with OpenSCAD
+    name: Build Linux (OpenSCAD not bundled)
     needs: create-release
     runs-on: ubuntu-22.04
 
@@ -332,33 +323,6 @@ jobs:
           libxkbcommon-x11-0 libegl1 libdbus-1-3 libxcb-xfixes0 \
           fuse libfuse2 file
 
-    - name: Download OpenSCAD 2025
-      run: |
-        echo "Downloading OpenSCAD ${{ env.OPENSCAD_VERSION }} for Linux..."
-
-        # Download latest snapshot from files.openscad.org
-        # Linux AppImage format: OpenSCAD-2025.01.24.ai22854-x86_64.AppImage
-        # We need to find the exact filename with build number
-        APPIMAGE_FILE=$(curl -s https://files.openscad.org/snapshots/ | grep -oP "OpenSCAD-${{ env.OPENSCAD_VERSION }}\.ai\d+-x86_64\.AppImage" | head -1)
-
-        if [ -z "$APPIMAGE_FILE" ]; then
-          echo "Error: Could not find AppImage for version ${{ env.OPENSCAD_VERSION }}"
-          exit 1
-        fi
-
-        echo "Found AppImage: $APPIMAGE_FILE"
-        curl -L "https://files.openscad.org/snapshots/$APPIMAGE_FILE" -o openscad.AppImage
-
-        # Extract AppImage contents
-        chmod +x openscad.AppImage
-        ./openscad.AppImage --appimage-extract
-
-        mkdir -p openscad_bundle
-        mv squashfs-root openscad_bundle/openscad
-        rm openscad.AppImage
-
-        echo "✓ OpenSCAD extracted to openscad_bundle/"
-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -367,6 +331,7 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
+        echo "Building Qrly (OpenSCAD not bundled - users install separately)"
         pyinstaller qrly.spec --clean --noconfirm
         ls -la dist/
 
