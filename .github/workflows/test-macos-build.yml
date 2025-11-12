@@ -44,6 +44,33 @@ jobs:
         echo "Build completed!"
         ls -la dist/
 
+    - name: Bundle Qt frameworks manually
+      run: |
+        echo "Manually bundling Qt frameworks (dereferencing symlinks)..."
+
+        # Find PyQt6 Qt6 directory
+        PYQT6_DIR=$(python -c "import PyQt6; import os; print(os.path.join(os.path.dirname(PyQt6.__file__), 'Qt6'))")
+        echo "PyQt6 Qt6 directory: $PYQT6_DIR"
+
+        # Create directory for frameworks in dist/Qrly
+        mkdir -p dist/Qrly/PyQt6/Qt6/lib
+
+        # Copy required Qt frameworks, dereferencing symlinks (-L flag)
+        echo "Copying QtCore.framework..."
+        cp -RL "$PYQT6_DIR/lib/QtCore.framework" dist/Qrly/PyQt6/Qt6/lib/ || echo "QtCore copy failed, continuing..."
+
+        echo "Copying QtWidgets.framework..."
+        cp -RL "$PYQT6_DIR/lib/QtWidgets.framework" dist/Qrly/PyQt6/Qt6/lib/ || echo "QtWidgets copy failed, continuing..."
+
+        echo "Copying QtGui.framework..."
+        cp -RL "$PYQT6_DIR/lib/QtGui.framework" dist/Qrly/PyQt6/Qt6/lib/ || echo "QtGui copy failed, continuing..."
+
+        echo "Copying QtDBus.framework (required by QtWidgets)..."
+        cp -RL "$PYQT6_DIR/lib/QtDBus.framework" dist/Qrly/PyQt6/Qt6/lib/ || echo "QtDBus copy failed, continuing..."
+
+        echo "✓ Qt frameworks copied with symlinks dereferenced"
+        ls -la dist/Qrly/PyQt6/Qt6/lib/
+
     - name: Manually create .app bundle
       run: |
         echo "Creating Qrly.app structure manually (PyInstaller BUNDLE disabled due to Qt symlink issues)..."
