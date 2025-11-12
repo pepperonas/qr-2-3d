@@ -53,41 +53,35 @@ jobs:
         PYQT6_DIR=$(python -c "import PyQt6; import os; print(os.path.join(os.path.dirname(PyQt6.__file__), 'Qt6'))")
         echo "PyQt6 Qt6 directory: $PYQT6_DIR"
 
-        # Create directory for frameworks in .app bundle
-        mkdir -p dist/Qrly.app/Contents/MacOS/_internal/PyQt6/Qt6/lib
+        # Copy required Qt frameworks to Contents/Frameworks/ (BUNDLE structure)
+        echo "Copying QtCore.framework to Contents/Frameworks/..."
+        cp -RL "$PYQT6_DIR/lib/QtCore.framework" dist/Qrly.app/Contents/Frameworks/
 
-        # Copy required Qt frameworks, dereferencing symlinks (-L flag)
-        echo "Copying QtCore.framework..."
-        cp -RL "$PYQT6_DIR/lib/QtCore.framework" dist/Qrly.app/Contents/MacOS/_internal/PyQt6/Qt6/lib/
+        echo "Copying QtWidgets.framework to Contents/Frameworks/..."
+        cp -RL "$PYQT6_DIR/lib/QtWidgets.framework" dist/Qrly.app/Contents/Frameworks/
 
-        echo "Copying QtWidgets.framework..."
-        cp -RL "$PYQT6_DIR/lib/QtWidgets.framework" dist/Qrly.app/Contents/MacOS/_internal/PyQt6/Qt6/lib/
+        echo "Copying QtGui.framework to Contents/Frameworks/..."
+        cp -RL "$PYQT6_DIR/lib/QtGui.framework" dist/Qrly.app/Contents/Frameworks/
 
-        echo "Copying QtGui.framework..."
-        cp -RL "$PYQT6_DIR/lib/QtGui.framework" dist/Qrly.app/Contents/MacOS/_internal/PyQt6/Qt6/lib/
-
-        echo "Copying QtDBus.framework (required by QtWidgets)..."
-        cp -RL "$PYQT6_DIR/lib/QtDBus.framework" dist/Qrly.app/Contents/MacOS/_internal/PyQt6/Qt6/lib/
+        echo "Copying QtDBus.framework to Contents/Frameworks/..."
+        cp -RL "$PYQT6_DIR/lib/QtDBus.framework" dist/Qrly.app/Contents/Frameworks/
 
         echo "✓ Qt frameworks bundled successfully"
-        ls -la dist/Qrly.app/Contents/MacOS/_internal/PyQt6/Qt6/lib/
+        ls -la dist/Qrly.app/Contents/Frameworks/ | grep Qt
 
     - name: Verify app structure
       run: |
-        echo "Verifying PyInstaller-created Qrly.app structure..."
+        echo "Verifying PyInstaller BUNDLE .app structure..."
         ls -la dist/Qrly.app/Contents/
         echo ""
-        echo "Checking MacOS directory:"
-        ls -la dist/Qrly.app/Contents/MacOS/ | head -10
-        echo ""
-        echo "Checking _internal directory:"
-        ls -la dist/Qrly.app/Contents/MacOS/_internal/ | head -10
-        echo ""
-        echo "Checking Python.framework:"
-        ls -la dist/Qrly.app/Contents/MacOS/_internal/Python.framework/Versions/
+        echo "Checking Frameworks (should contain Python and Qt):"
+        ls -la dist/Qrly.app/Contents/Frameworks/ | grep -E "Python|Qt" | head -10
         echo ""
         echo "Checking Resources:"
-        ls -la dist/Qrly.app/Contents/Resources/ || echo "No Resources directory"
+        ls -la dist/Qrly.app/Contents/Resources/ | head -10
+        echo ""
+        echo "Checking MacOS directory:"
+        ls -la dist/Qrly.app/Contents/MacOS/
 
     - name: Create DMG installer
       run: |
