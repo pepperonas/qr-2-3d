@@ -100,13 +100,24 @@ a = Analysis(
     noarchive=False,
 )
 
-# macOS: Remove ALL .framework entries to avoid symlink issues during COLLECT
+# macOS: Remove Qt .framework entries to avoid symlink issues during COLLECT
 # Qt frameworks have Versions/Current symlinks that cause FileExistsError
-# We remove them here and rely on PyQt6 installed in system Python instead
+# Keep Python.framework (required by PyInstaller) but remove Qt frameworks
 if sys.platform == 'darwin':
-    print("Filtering out .framework files to avoid symlink conflicts...")
-    a.binaries = [x for x in a.binaries if '.framework' not in x[0]]
-    a.datas = [x for x in a.datas if '.framework' not in x[0]]
+    print("Filtering out Qt .framework files to avoid symlink conflicts...")
+
+    def should_keep(path):
+        # Keep if not a framework
+        if '.framework' not in path:
+            return True
+        # Keep Python.framework (required!)
+        if 'Python.framework' in path:
+            return True
+        # Filter out all Qt frameworks
+        return False
+
+    a.binaries = [x for x in a.binaries if should_keep(x[0])]
+    a.datas = [x for x in a.datas if should_keep(x[0])]
     print(f"Binaries after filtering: {len(a.binaries)}")
     print(f"Datas after filtering: {len(a.datas)}")
 
