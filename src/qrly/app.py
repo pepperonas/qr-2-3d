@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-QR Code 3D Generator - Simplified GUI without 3D viewer
+qrly - Simplified GUI without 3D viewer
 """
 
 import sys
@@ -18,8 +18,8 @@ from PyQt6.QtWidgets import (
     QGroupBox, QFormLayout, QGridLayout, QProgressBar, QFileDialog, QMessageBox, QCheckBox
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
-from qr3d.generator import QRModelGenerator
-from qr3d import __version__
+from qrly.generator import QRModelGenerator
+from qrly import __version__
 
 
 class GeneratorThread(QThread):

@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "qr-3d-generator"
+name = "qrly"
 version = "0.3.0"
-description = "Desktop application and CLI tool for generating 3D-printable QR code models from URLs or images"
+description = "qrly - Desktop application and CLI tool for generating 3D-printable QR code models from URLs or images"
 readme = "README.md"
 requires-python = ">=3.13"
 license = {text = "MIT"}
@@ -32,8 +32,8 @@ dev = [
 ]
 
 [project.scripts]
-qr3d-gui = "qr3d.app:main"
-qr3d = "qr3d.generator:main"
+qrly = "qrly.app:main"
+qrly-cli = "qrly.generator:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

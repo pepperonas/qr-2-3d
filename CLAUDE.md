@@ -37,7 +37,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 QRs/
 ├── src/
-│   └── qr3d/                  # Main Python package (v0.3.0)
+│   └── qrly/                  # Main Python package (v0.3.0)
 │       ├── __init__.py        # Package init (__version__ = "0.3.0")
 │       ├── app.py             # Desktop GUI application with drag-and-drop support
 │       ├── generator.py       # Backend generator with smart naming
@@ -63,7 +63,7 @@ QRs/
 │   └── config.json            # Batch configuration file
 ├── pyproject.toml             # Package configuration (v0.3.0)
 ├── pytest.ini                 # Test configuration
-├── qr3d.spec                  # PyInstaller build specification
+├── qrly.spec                  # PyInstaller build specification
 ├── README.md                  # User documentation
 ├── INSTALL.md                 # Installation guide
 └── CLAUDE.md                  # This file
@@ -71,7 +71,7 @@ QRs/
 
 ## Architecture
 
-### Backend: src/qr3d/generator.py
+### Backend: src/qrly/generator.py
 
 **Class: QRModelGenerator**
 
@@ -126,7 +126,7 @@ text_rotation = 0    # Z-axis rotation (0 or 180 degrees)
 - `rectangle-text`: 54x64x1.25mm with text label under QR code
 - `pendant-text`: 55x~65x1.25mm with hole and text label under QR code
 
-### GUI: src/qr3d/app.py
+### GUI: src/qrly/app.py
 
 **Class: SimpleMainWindow (QMainWindow)**
 
@@ -199,7 +199,7 @@ Background worker for batch processing that:
 ```
 
 **Important: No 3D Viewer**
-- ViewerWidget exists but is NOT used in src/qr3d/app.py
+- ViewerWidget exists but is NOT used in src/qrly/app.py
 - PyVista 3D rendering has compatibility issues on macOS
 - Users open STL files in external viewers/slicers
 
@@ -316,8 +316,8 @@ module text_label() {
 - Result: Text guaranteed to fit within model boundaries for all 1-20 character strings
 
 **Code Location:**
-- `calculate_text_size()` method: src/qr3d/generator.py:121-152
-- Dynamic sizing call: src/qr3d/generator.py:154-169 in `calculate_dimensions()`
+- `calculate_text_size()` method: src/qrly/generator.py:121-152
+- Dynamic sizing call: src/qrly/generator.py:154-169 in `calculate_dimensions()`
 
 ### 2. Performance Optimization: Multi-Layered Strategy
 
@@ -370,15 +370,15 @@ cmd = [openscad_bin, '-o', str(stl_path), '--enable=fast-csg', str(scad_path)]
 ```
 
 **Code Location:**
-- `find_openscad_binary()`: src/qr3d/generator.py:20-28
-- `export_stl()`: src/qr3d/generator.py:411-450
-- `$fn` setting: src/qr3d/generator.py:255
+- `find_openscad_binary()`: src/qrly/generator.py:20-28
+- `export_stl()`: src/qrly/generator.py:411-450
+- `$fn` setting: src/qrly/generator.py:255
 
 **JSON Metadata Optimization (2025-11-11):**
 - Float values rounded to 3 decimal places for better readability
 - `round_floats()` helper function recursively processes nested dictionaries
 - Example: `0.9807692307692307` → `0.981`
-- Location: src/qr3d/generator.py:348-356
+- Location: src/qrly/generator.py:348-356
 
 ### 3. Maximized QR Code Area
 
@@ -423,11 +423,11 @@ qr = qrcode.QRCode(
 
 **Current Solution:**
 - Simplified GUI without 3D preview
-- `src/qr3d/app.py` is the working application
+- `src/qrly/app.py` is the working application
 - Users view STL in external tools (PrusaSlicer, Cura, etc.)
 
 **Files:**
-- ✅ `src/qr3d/app.py` - Working GUI
+- ✅ `src/qrly/app.py` - Working GUI
 - ❌ `main.py` - Deleted (had PyVista integration issues)
 - ⚠️ `ui/viewer_widget.py` - Kept for future attempts
 
@@ -435,21 +435,21 @@ qr = qrcode.QRCode(
 
 ### Adding New Parameters
 
-1. **Backend** (`src/qr3d/generator.py`):
+1. **Backend** (`src/qrly/generator.py`):
    ```python
    class QRModelGenerator:
        def __init__(self, ...):
            self.new_parameter = default_value
    ```
 
-2. **GUI** (`src/qr3d/app.py`):
+2. **GUI** (`src/qrly/app.py`):
    - Add QDoubleSpinBox/QSpinBox in `create_controls_panel()`
    - Update `GeneratorThread.run()` to apply parameter
    ```python
    generator.new_parameter = self.params['new_param']
    ```
 
-3. **CLI** (`src/qr3d/generator.py` main()):
+3. **CLI** (`src/qrly/generator.py` main()):
    ```python
    parser.add_argument('--new-param', type=float, default=X)
    generator.new_parameter = args.new_param
@@ -491,7 +491,7 @@ qr = qrcode.QRCode(
 - Python 3.13 vs 3.14 - same issue
 
 **Current Workaround:**
-- Use `src/qr3d/app.py` without 3D viewer
+- Use `src/qrly/app.py` without 3D viewer
 - Users open STL in external applications
 
 **Future Investigation:**
@@ -514,7 +514,7 @@ qr = qrcode.QRCode(
 
 ### Start GUI
 ```bash
-./venv-gui/bin/python src/qr3d/app.py
+./venv-gui/bin/python src/qrly/app.py
 ```
 
 ### Test CLI
@@ -639,12 +639,12 @@ For development questions:
 **Last Updated:** 2025-11-11 (v0.1.0: Project reorganization to src-layout)
 **Python Version:** 3.13
 **Package Version:** 0.1.0
-**Package Name:** qr3d (was: qr-3d-generator)
-**Primary GUI:** src/qr3d/app.py (entry point: `qr3d-gui` or `python -m qr3d.app`)
-**Primary CLI:** src/qr3d/generator.py (entry point: `qr3d` or `python -m qr3d`)
+**Package Name:** qrly (was: qrly)
+**Primary GUI:** src/qrly/app.py (entry point: `qrly` or `python -m qrly.app`)
+**Primary CLI:** src/qrly/generator.py (entry point: `qrly` or `python -m qrly`)
 **Status:** Production-ready, GUI functional without 3D viewer, src-layout structure
 **Latest Features:**
-- **v0.1.0**: Reorganized to Python src-layout standard (src/qr3d/, tests/, scripts/)
+- **v0.1.0**: Reorganized to Python src-layout standard (src/qrly/, tests/, scripts/)
 - Batch processing: Generate multiple models from JSON configuration
 - Text rotation (0° or 180°) for text modes - Rectangle-text: user choice, Pendant-text: automatic
 **Developer:** Martin Pfeffer

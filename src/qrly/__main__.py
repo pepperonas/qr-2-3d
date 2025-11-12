@@ -1,6 +1,6 @@
-"""CLI entry point for qr3d package
+"""CLI entry point for qrly package
 
-This allows running the generator as: python -m qr3d
+This allows running the generator as: python -m qrly
 """
 import sys
 from .generator import main

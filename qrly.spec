@@ -22,21 +22,21 @@ hiddenimports = [
     'PIL.ImageQt',
     'qrcode',
     'qrcode.image.pil',
-    'qr3d',
-    'qr3d.app',
-    'qr3d.generator',
-    'qr3d.gui',
-    'qr3d.gui.viewer_widget',
+    'qrly',
+    'qrly.app',
+    'qrly.generator',
+    'qrly.gui',
+    'qrly.gui.viewer_widget',
 ]
 
 a = Analysis(
-    ['src/qr3d/app.py'],
+    ['src/qrly/app.py'],
     pathex=['src'],
     binaries=[],
     datas=[
-        ('src/qr3d/__init__.py', 'qr3d'),
-        ('src/qr3d/generator.py', 'qr3d'),
-        ('src/qr3d/gui/', 'qr3d/gui'),
+        ('src/qrly/__init__.py', 'qrly'),
+        ('src/qrly/generator.py', 'qrly'),
+        ('src/qrly/gui/', 'qrly/gui'),
         ('README.md', '.'),
         ('LICENSE', '.'),
     ] + pyqt6_datas,
@@ -97,7 +97,7 @@ if sys.platform == 'darwin':
         coll,
         name='QR3DGenerator.app',
         icon=None,  # TODO: Add .icns file if available
-        bundle_identifier='com.qrgen.qr3dgenerator',
+        bundle_identifier='com.qrgen.qrlygenerator',
         info_plist={
             'CFBundleName': 'QR Code 3D Generator',
             'CFBundleDisplayName': 'QR Code 3D Generator',

@@ -1,4 +1,4 @@
-"""QR Code 3D Generator - Generate 3D-printable QR code models
+"""qrly - Generate 3D-printable QR code models
 
 This package provides tools to create 3D-printable QR code models
 from URLs or images, with support for various shapes and text labels.

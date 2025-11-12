@@ -2,7 +2,7 @@
 
 Automatically generate 3D-printable QR code models from URLs or PNG/JPG images - with desktop GUI or command line.
 
-![QR Code 3D Generator GUI](docs/images/screenshot-v0.0.1.png)
+![qrly GUI](docs/images/screenshot-v0.0.1.png)
 
 ![Generated 3D Models](docs/images/screenshot-3d-models.png)
 
@@ -82,10 +82,10 @@ pip install -e .
 
 ```bash
 # After pip installation:
-qr3d-gui
+qrly
 
 # Or with virtual environment:
-./venv-gui/bin/python -m qr3d.app
+./venv-gui/bin/python -m qrly.app
 ```
 
 **GUI Features:**
@@ -108,7 +108,7 @@ qr3d-gui
 ./scripts/qr_generate.sh https://your-website.com --mode pendant --name my-site
 
 # Or directly with Python (after pip install -e .):
-qr3d https://your-website.com --mode pendant --name my-site
+qrly https://your-website.com --mode pendant --name my-site
 ```
 
 #### From Image File:
@@ -123,7 +123,7 @@ qr3d https://your-website.com --mode pendant --name my-site
 
 **Start:**
 ```bash
-./venv-gui/bin/python -m qr3d.app
+./venv-gui/bin/python -m qrly.app
 ```
 
 **Operation:**
@@ -202,7 +202,7 @@ generated/
 For generating multiple models at once, batch functionality is available:
 
 **First-time use:**
-1. Start GUI: `./venv-gui/bin/python -m qr3d.app`
+1. Start GUI: `./venv-gui/bin/python -m qrly.app`
 2. In "Batch Processing" section, click "Create Config Template"
 3. File `batch/config.json` is created with example configuration
 4. Customize `batch/config.json` as desired (see below)
@@ -288,7 +288,7 @@ For generating multiple models at once, batch functionality is available:
 
 **With Rotated Text (Rectangle+Text):**
 ```bash
-./venv-gui/bin/python -m qr3d https://example.com --mode rectangle-text --text "ROTATED" --text-rotation 180 --name mycard-rot
+./venv-gui/bin/python -m qrly https://example.com --mode rectangle-text --text "ROTATED" --text-rotation 180 --name mycard-rot
 ```
 
 #### From Image File:
@@ -480,7 +480,7 @@ The system uses intelligent **pixel sampling** for optimal performance:
 
 ### Option A: GUI (recommended for beginners)
 
-1. Start GUI: `./venv-gui/bin/python -m qr3d.app`
+1. Start GUI: `./venv-gui/bin/python -m qrly.app`
 2. Enter URL: `https://your-website.com`
 3. Choose mode: Pendant
 4. Select size: Medium (1x) or adjust as needed
@@ -556,7 +556,7 @@ The `.scad` file can be opened in OpenSCAD for:
 ```
 QRs/
 ├── src/
-│   └── qr3d/                  # Python Package
+│   └── qrly/                  # Python Package
 │       ├── __init__.py        # Package Init (Version 0.1.0)
 │       ├── app.py             # Desktop GUI (START HERE!)
 │       ├── generator.py       # Backend Generator
@@ -573,7 +573,7 @@ QRs/
 ├── generated/                 # All Generated Files
 ├── pyproject.toml             # Package Configuration
 ├── pytest.ini                 # Test Configuration
-├── qr3d.spec                  # PyInstaller Build Spec
+├── qrly.spec                  # PyInstaller Build Spec
 ├── README.md                  # This File
 ├── INSTALL.md                 # Installation Guide
 └── CLAUDE.md                  # AI Context for Claude Code
@@ -646,7 +646,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 For questions or issues:
 1. Read README completely
 2. Check INSTALL.md
-3. Create issue on GitHub: https://github.com/pepperonas/qr-2-3d
+3. Create issue on GitHub: https://github.com/pepperonas/qrly
 4. Or contact developer
 
 ---
