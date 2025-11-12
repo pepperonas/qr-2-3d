@@ -62,7 +62,7 @@ jobs:
 
           | Platform | File | Installation |
           |----------|------|--------------|
-          | **macOS** | `Qrly-${{ steps.get_version.outputs.version }}-macOS.dmg` | Double-click DMG, drag to Applications<br/>**Requires**: `brew install openscad` |
+          | **macOS** | `Qrly-${{ steps.get_version.outputs.version }}-macOS.dmg` | 1. Drag to Applications<br/>2. Run: `xattr -cr /Applications/Qrly.app`<br/>3. Install OpenSCAD: `brew install openscad` |
           | **Windows** | `Qrly-${{ steps.get_version.outputs.version }}-Windows-Setup.exe` | Run installer (includes OpenSCAD) |
           | **Linux** | `Qrly-${{ steps.get_version.outputs.version }}-Linux.AppImage` | `chmod +x *.AppImage`, then run<br/>**Requires**: `sudo apt install openscad` |
 
@@ -82,9 +82,10 @@ jobs:
              - Windows: Bundled with installer
              - Linux: `sudo apt install openscad`
           2. Download and install Qrly for your platform
-          3. Enter a URL or select an image file
-          4. Choose mode and adjust parameters
-          5. Click "Generate STL" - done in ~1 second!
+          3. **macOS only:** Remove quarantine flag: `xattr -cr /Applications/Qrly.app`
+          4. Enter a URL or select an image file
+          5. Choose mode and adjust parameters
+          6. Click "Generate STL" - done in ~1 second!
 
           ### 🔧 System Requirements
 
@@ -99,7 +100,13 @@ jobs:
 
           ---
 
-          **Note**: Windows build includes OpenSCAD 2025.01.24. macOS and Linux builds require separate OpenSCAD installation.
+          **Important Notes:**
+
+          - **macOS Security:** The app is unsigned. After installation, run `xattr -cr /Applications/Qrly.app` to remove the quarantine flag, or right-click → Open → Open to bypass Gatekeeper.
+          - **Windows:** OpenSCAD 2025.01.24 is bundled with the installer
+          - **macOS/Linux:** Requires separate OpenSCAD installation via package manager
+
+          📖 **Full installation guide:** [INSTALL.md](https://github.com/${{ github.repository }}/blob/main/INSTALL.md)
 
           _Built with ❤️ using Python 3.13, PyQt6, and OpenSCAD 2025_
       env:
