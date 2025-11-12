@@ -28,9 +28,10 @@ def find_openscad_binary():
         # Running as script
         base_path = os.path.dirname(os.path.abspath(__file__))
 
-    # Check for bundled OpenSCAD (PyInstaller bundle)
+    # Check for bundled OpenSCAD (PyInstaller bundle - stored as data files)
     if sys.platform == 'darwin':
-        bundled_path = os.path.join(base_path, 'OpenSCAD.app', 'Contents', 'MacOS', 'OpenSCAD')
+        # Check bundled OpenSCAD.app (in openscad_bundle directory as data)
+        bundled_path = os.path.join(base_path, 'openscad_bundle', 'OpenSCAD.app', 'Contents', 'MacOS', 'OpenSCAD')
         if os.path.exists(bundled_path):
             return bundled_path
         # Check system installation
@@ -38,11 +39,12 @@ def find_openscad_binary():
         if os.path.exists(system_path):
             return system_path
     elif sys.platform == 'win32':
-        bundled_path = os.path.join(base_path, 'openscad', 'openscad.exe')
+        bundled_path = os.path.join(base_path, 'openscad_bundle', 'openscad.exe')
         if os.path.exists(bundled_path):
             return bundled_path
     else:  # Linux
-        bundled_path = os.path.join(base_path, 'openscad', 'openscad')
+        # Linux: OpenSCAD binary from extracted AppImage
+        bundled_path = os.path.join(base_path, 'openscad_bundle', 'openscad', 'usr', 'bin', 'openscad')
         if os.path.exists(bundled_path):
             return bundled_path
 
