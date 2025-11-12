@@ -153,20 +153,20 @@ coll = COLLECT(
     name='Qrly',
 )
 
-# macOS: .app bundle creation disabled due to PyInstaller symlink issues with Qt frameworks
-# The GitHub Actions workflow will manually create the .app structure instead
-# if sys.platform == 'darwin':
-#     app = BUNDLE(
-#         coll,
-#         name='Qrly.app',
-#         icon='assets/icons/app_icon.icns',
-#         bundle_identifier='com.qrly.app',
-#         info_plist={
-#             'CFBundleName': 'Qrly',
-#             'CFBundleDisplayName': 'Qrly - QR Code 3D Generator',
-#             'CFBundleVersion': '0.3.0',
-#             'CFBundleShortVersionString': '0.3.0',
-#             'NSHighResolutionCapable': 'True',
-#             'LSMinimumSystemVersion': '10.13.0',
-#         },
-#     )
+# macOS: .app bundle creation now works after filtering Qt frameworks
+# PyInstaller BUNDLE creates proper .app structure with correct Python paths
+if sys.platform == 'darwin':
+    app = BUNDLE(
+        coll,
+        name='Qrly.app',
+        icon='assets/icons/app_icon.icns',
+        bundle_identifier='com.qrly.app',
+        info_plist={
+            'CFBundleName': 'Qrly',
+            'CFBundleDisplayName': 'Qrly - QR Code 3D Generator',
+            'CFBundleVersion': '0.3.0',
+            'CFBundleShortVersionString': '0.3.0',
+            'NSHighResolutionCapable': 'True',
+            'LSMinimumSystemVersion': '10.13.0',
+        },
+    )
