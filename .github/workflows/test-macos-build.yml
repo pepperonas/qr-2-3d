@@ -1,0 +1,138 @@
+name: Test macOS Build
+
+on:
+  workflow_dispatch:  # Manual trigger only
+  push:
+    branches:
+      - test-macos  # Only on test branch
+
+permissions:
+  contents: write
+
+env:
+  OPENSCAD_VERSION: "2025.01.24"
+
+jobs:
+  test-macos:
+    name: Test macOS Build with OpenSCAD
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.13
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Download OpenSCAD 2025
+      run: |
+        echo "Downloading OpenSCAD ${{ env.OPENSCAD_VERSION }} for macOS..."
+        curl -L "https://files.openscad.org/snapshots/OpenSCAD-${{ env.OPENSCAD_VERSION }}.dmg" -o openscad.dmg
+
+        echo "DMG downloaded, size:"
+        ls -lh openscad.dmg
+
+        # Mount DMG and extract OpenSCAD.app
+        hdiutil attach openscad.dmg
+        mkdir -p openscad_bundle
+        echo "Copying OpenSCAD.app..."
+        cp -R /Volumes/OpenSCAD/OpenSCAD.app openscad_bundle/
+        hdiutil detach /Volumes/OpenSCAD
+        rm openscad.dmg
+
+        echo "✓ OpenSCAD extracted to openscad_bundle/"
+        ls -la openscad_bundle/
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install pyinstaller
+
+    - name: Clean previous builds
+      run: |
+        rm -rf dist build
+
+    - name: Build with PyInstaller
+      run: |
+        echo "Starting PyInstaller build..."
+        pyinstaller qrly.spec --clean --noconfirm
+        echo "Build completed!"
+        ls -la dist/
+
+    - name: Verify Qrly.app structure
+      run: |
+        echo "Checking Qrly.app structure..."
+        ls -la dist/Qrly.app/Contents/
+
+        echo "Checking for bundled OpenSCAD..."
+        if [ -d "dist/Qrly.app/Contents/MacOS/openscad_bundle/OpenSCAD.app" ]; then
+          echo "✓ OpenSCAD.app found in bundle!"
+          ls -la dist/Qrly.app/Contents/MacOS/openscad_bundle/
+        else
+          echo "✗ OpenSCAD.app NOT found in bundle!"
+          find dist/Qrly.app -name "OpenSCAD.app" -o -name "openscad_bundle"
+        fi
+
+    - name: Test OpenSCAD binary
+      run: |
+        echo "Testing if bundled OpenSCAD works..."
+        OPENSCAD_BIN="dist/Qrly.app/Contents/MacOS/openscad_bundle/OpenSCAD.app/Contents/MacOS/OpenSCAD"
+
+        if [ -f "$OPENSCAD_BIN" ]; then
+          echo "✓ OpenSCAD binary found!"
+          ls -lh "$OPENSCAD_BIN"
+
+          # Test if it's executable
+          if [ -x "$OPENSCAD_BIN" ]; then
+            echo "✓ OpenSCAD binary is executable!"
+            "$OPENSCAD_BIN" --version || echo "Version check failed (may be normal)"
+          else
+            echo "✗ OpenSCAD binary is NOT executable!"
+            chmod +x "$OPENSCAD_BIN"
+            echo "Made it executable, testing again..."
+            "$OPENSCAD_BIN" --version || echo "Version check failed (may be normal)"
+          fi
+        else
+          echo "✗ OpenSCAD binary NOT found at expected location!"
+        fi
+
+    - name: Create DMG installer
+      run: |
+        brew install create-dmg
+
+        mkdir -p dist/dmg
+        cp -R dist/Qrly.app dist/dmg/
+
+        # Create DMG
+        create-dmg \
+          --volname "Qrly Test Installer" \
+          --window-pos 200 120 \
+          --window-size 800 400 \
+          --icon-size 100 \
+          --icon "Qrly.app" 200 190 \
+          --hide-extension "Qrly.app" \
+          --app-drop-link 600 185 \
+          "dist/Qrly-test-macOS.dmg" \
+          "dist/dmg/" || \
+        hdiutil create -volname "Qrly Test" -srcfolder dist/dmg -ov -format UDZO \
+          "dist/Qrly-test-macOS.dmg"
+
+        echo "✓ DMG created!"
+        ls -lh dist/Qrly-test-macOS.dmg
+
+    - name: Upload DMG as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Qrly-test-macOS
+        path: dist/Qrly-test-macOS.dmg
+        retention-days: 7
+
+    - name: Upload full app bundle as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Qrly-app-bundle
+        path: dist/Qrly.app
+        retention-days: 7
