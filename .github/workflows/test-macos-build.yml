@@ -29,7 +29,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e .
+        # Install only required packages, NOT dev dependencies
+        pip install Pillow "qrcode[pil]" PyQt6
         pip install py2app
 
     - name: Clean previous builds
