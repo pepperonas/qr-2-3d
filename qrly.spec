@@ -100,13 +100,28 @@ a = Analysis(
     noarchive=False,
 )
 
-# macOS: BUNDLE mode handles all frameworks correctly, no filtering needed
-# Previously we filtered Qt frameworks to avoid symlink issues in COLLECT mode,
-# but BUNDLE mode can handle framework symlinks properly
+# macOS: Filter Qt frameworks to avoid symlink issues
+# Qt frameworks have Versions/Current symlinks that cause FileExistsError
+# We keep Python.framework (required) and rely on PyQt6 Python modules
 if sys.platform == 'darwin':
-    print("Using PyInstaller BUNDLE - all frameworks will be included")
-    print(f"Binaries: {len(a.binaries)}")
-    print(f"Datas: {len(a.datas)}")
+    print("Filtering Qt .framework files to avoid symlink conflicts...")
+
+    def should_keep(path):
+        # Keep if not a framework
+        if '.framework' not in path:
+            return True
+        # Keep Python.framework (required by PyInstaller!)
+        if 'Python.framework' in path:
+            return True
+        # Filter out all Qt frameworks (they cause symlink errors)
+        if '/Qt' in path and '.framework' in path:
+            return False
+        return True
+
+    a.binaries = [x for x in a.binaries if should_keep(x[0])]
+    a.datas = [x for x in a.datas if should_keep(x[0])]
+    print(f"Binaries after filtering: {len(a.binaries)}")
+    print(f"Datas after filtering: {len(a.datas)}")
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
@@ -140,20 +155,20 @@ coll = COLLECT(
     name='Qrly',
 )
 
-# macOS: .app bundle creation now works after filtering Qt frameworks
-# PyInstaller BUNDLE creates proper .app structure with correct Python paths
-if sys.platform == 'darwin':
-    app = BUNDLE(
-        coll,
-        name='Qrly.app',
-        icon='assets/icons/app_icon.icns',
-        bundle_identifier='com.qrly.app',
-        info_plist={
-            'CFBundleName': 'Qrly',
-            'CFBundleDisplayName': 'Qrly - QR Code 3D Generator',
-            'CFBundleVersion': '0.3.1',
-            'CFBundleShortVersionString': '0.3.1',
-            'NSHighResolutionCapable': 'True',
-            'LSMinimumSystemVersion': '10.13.0',
-        },
-    )
+# macOS: BUNDLE disabled due to Qt framework symlink issues in COLLECT
+# Workflow will manually create .app from onedir output
+# if sys.platform == 'darwin':
+#     app = BUNDLE(
+#         coll,
+#         name='Qrly.app',
+#         icon='assets/icons/app_icon.icns',
+#         bundle_identifier='com.qrly.app',
+#         info_plist={
+#             'CFBundleName': 'Qrly',
+#             'CFBundleDisplayName': 'Qrly - QR Code 3D Generator',
+#             'CFBundleVersion': '0.3.1',
+#             'CFBundleShortVersionString': '0.3.1',
+#             'NSHighResolutionCapable': 'True',
+#             'LSMinimumSystemVersion': '10.13.0',
+#         },
+#     )

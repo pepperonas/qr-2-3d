@@ -36,28 +36,110 @@ jobs:
       run: |
         rm -rf dist build
 
-    - name: Build with PyInstaller
+    - name: Build with PyInstaller (onedir mode)
       run: |
-        echo "Building Qrly with PyInstaller BUNDLE (produces dist/Qrly.app)..."
-        echo "PyInstaller BUNDLE handles all frameworks automatically"
+        echo "Building Qrly with PyInstaller onedir (produces dist/Qrly/)..."
+        echo "Qt frameworks filtered out, will be added manually"
         echo "Users will install OpenSCAD separately: brew install openscad"
         pyinstaller qrly.spec --clean --noconfirm
         echo "Build completed!"
         ls -la dist/
 
+    - name: Copy Qt frameworks (dereferencing symlinks)
+      run: |
+        echo "Copying Qt frameworks to dist/Qrly/_internal/ (dereferencing symlinks)..."
+
+        # Find PyQt6 Qt6 directory
+        PYQT6_DIR=$(python -c "import PyQt6; import os; print(os.path.join(os.path.dirname(PyQt6.__file__), 'Qt6'))")
+        echo "PyQt6 Qt6 directory: $PYQT6_DIR"
+
+        # Create directory for frameworks
+        mkdir -p dist/Qrly/_internal/PyQt6/Qt6/lib
+
+        # Copy required Qt frameworks, dereferencing ALL symlinks (-L flag)
+        echo "Copying QtCore.framework..."
+        cp -RL "$PYQT6_DIR/lib/QtCore.framework" dist/Qrly/_internal/PyQt6/Qt6/lib/
+
+        echo "Copying QtWidgets.framework..."
+        cp -RL "$PYQT6_DIR/lib/QtWidgets.framework" dist/Qrly/_internal/PyQt6/Qt6/lib/
+
+        echo "Copying QtGui.framework..."
+        cp -RL "$PYQT6_DIR/lib/QtGui.framework" dist/Qrly/_internal/PyQt6/Qt6/lib/
+
+        echo "Copying QtDBus.framework..."
+        cp -RL "$PYQT6_DIR/lib/QtDBus.framework" dist/Qrly/_internal/PyQt6/Qt6/lib/
+
+        echo "✓ Qt frameworks copied successfully"
+        ls -la dist/Qrly/_internal/PyQt6/Qt6/lib/
+
+    - name: Create .app bundle structure
+      run: |
+        echo "Creating Qrly.app from onedir output..."
+
+        # Create .app directory structure
+        mkdir -p dist/Qrly.app/Contents/MacOS
+        mkdir -p dist/Qrly.app/Contents/Resources
+        mkdir -p dist/Qrly.app/Contents/Frameworks
+
+        # Copy entire Qrly folder to MacOS
+        cp -R dist/Qrly/* dist/Qrly.app/Contents/MacOS/
+
+        # Create Python symlink for PyInstaller bootloader
+        ln -s ../MacOS/_internal/Python.framework/Versions/3.13/Python dist/Qrly.app/Contents/Frameworks/Python
+
+        # Copy icon
+        if [ -f "assets/icons/app_icon.icns" ]; then
+          cp assets/icons/app_icon.icns dist/Qrly.app/Contents/Resources/
+        fi
+
+        # Create Info.plist
+        cat > dist/Qrly.app/Contents/Info.plist <<'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleName</key>
+            <string>Qrly</string>
+            <key>CFBundleDisplayName</key>
+            <string>Qrly - QR Code 3D Generator</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.qrly.app</string>
+            <key>CFBundleVersion</key>
+            <string>0.3.1</string>
+            <key>CFBundleShortVersionString</key>
+            <string>0.3.1</string>
+            <key>CFBundleExecutable</key>
+            <string>Qrly</string>
+            <key>CFBundleIconFile</key>
+            <string>app_icon</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+            <key>LSMinimumSystemVersion</key>
+            <string>10.13.0</string>
+        </dict>
+        </plist>
+        EOF
+
+        chmod +x dist/Qrly.app/Contents/MacOS/Qrly
+
+        echo "✓ Qrly.app created successfully"
+        ls -la dist/
+
     - name: Verify app structure
       run: |
-        echo "Verifying PyInstaller BUNDLE .app structure..."
+        echo "Verifying manually created .app structure..."
         ls -la dist/Qrly.app/Contents/
         echo ""
-        echo "Checking Frameworks (should contain Python and Qt):"
-        ls -la dist/Qrly.app/Contents/Frameworks/ | grep -E "Python|Qt" | head -10
-        echo ""
-        echo "Checking Resources:"
-        ls -la dist/Qrly.app/Contents/Resources/ | head -10
+        echo "Checking Frameworks (should have Python symlink):"
+        ls -la dist/Qrly.app/Contents/Frameworks/
         echo ""
         echo "Checking MacOS directory:"
-        ls -la dist/Qrly.app/Contents/MacOS/
+        ls -la dist/Qrly.app/Contents/MacOS/ | head -10
+        echo ""
+        echo "Checking _internal with Qt frameworks:"
+        ls -la dist/Qrly.app/Contents/MacOS/_internal/PyQt6/Qt6/lib/
 
     - name: Create DMG installer
       run: |
