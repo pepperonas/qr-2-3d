@@ -11,7 +11,7 @@ APP = ['src/qrly/app.py']
 DATA_FILES = []
 OPTIONS = {
     'argv_emulation': False,
-    'semi_standalone': True,  # Don't bundle Python framework, use system Python
+    'semi_standalone': False,  # Fully standalone mode to avoid Python path issues
     'plist': {
         'CFBundleName': 'Qrly',
         'CFBundleDisplayName': 'Qrly - QR Code 3D Generator',
