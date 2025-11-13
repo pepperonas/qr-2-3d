@@ -2,12 +2,15 @@
 py2app setup script for Qrly
 """
 from setuptools import setup
+import os
+
+# Check if icon exists, use it if available
+icon_file = 'assets/icons/app_icon.icns' if os.path.exists('assets/icons/app_icon.icns') else None
 
 APP = ['src/qrly/app.py']
 DATA_FILES = []
 OPTIONS = {
     'argv_emulation': False,
-    'iconfile': 'assets/icons/app_icon.icns',
     'plist': {
         'CFBundleName': 'Qrly',
         'CFBundleDisplayName': 'Qrly - QR Code 3D Generator',
@@ -19,7 +22,11 @@ OPTIONS = {
     },
     'packages': ['PyQt6', 'PIL', 'qrcode', 'qrly'],
     'includes': ['PyQt6.QtCore', 'PyQt6.QtWidgets', 'PyQt6.QtGui'],
+    'excludes': ['matplotlib', 'numpy', 'pandas', 'scipy', 'pyvista', 'pyvistaqt', 'vtk', 'vtkmodules', 'test'],
 }
+
+if icon_file:
+    OPTIONS['iconfile'] = icon_file
 
 setup(
     app=APP,
