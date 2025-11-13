@@ -21,6 +21,9 @@ from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
 from qrly.generator import QRModelGenerator
 from qrly import __version__
 
+# Default output directory in user's home folder
+DEFAULT_OUTPUT_DIR = Path.home() / "qr-codes"
+
 
 class GeneratorThread(QThread):
     """Background thread for STL generation"""
@@ -47,10 +50,7 @@ class GeneratorThread(QThread):
                 self.progress.emit(f"Generating QR code from URL...")
 
                 # Create model subdirectory and generate QR code there
-                from pathlib import Path
-                import os
-
-                model_dir = Path("generated") / self.output_name
+                model_dir = DEFAULT_OUTPUT_DIR / self.output_name
                 model_dir.mkdir(parents=True, exist_ok=True)
 
                 qr_path = model_dir / f"{self.output_name}.png"
@@ -64,7 +64,7 @@ class GeneratorThread(QThread):
             generator = QRModelGenerator(
                 actual_input,
                 self.mode,
-                "generated"
+                str(DEFAULT_OUTPUT_DIR)
             )
 
             # Apply custom parameters
@@ -138,7 +138,7 @@ class BatchGeneratorThread(QThread):
                         self.progress.emit(f"Generating QR code from URL...")
 
                         # Create model subdirectory and generate QR code there
-                        model_dir = Path("generated") / name
+                        model_dir = DEFAULT_OUTPUT_DIR / name
                         model_dir.mkdir(parents=True, exist_ok=True)
 
                         qr_path = model_dir / f"{name}.png"
@@ -146,7 +146,7 @@ class BatchGeneratorThread(QThread):
                         actual_input = str(qr_path)
 
                     # Create generator
-                    generator = QRModelGenerator(actual_input, mode, "generated")
+                    generator = QRModelGenerator(actual_input, mode, str(DEFAULT_OUTPUT_DIR))
 
                     # Apply global parameters (with model-specific overrides)
                     generator.card_height = model_config.get('card_height', global_params.get('card_height', 1.25))
@@ -716,7 +716,7 @@ class SimpleMainWindow(QMainWindow):
 
         if success:
             stl_file = Path(stl_path)
-            success_msg = f"✅ {message}\n📁 Files saved in: generated/"
+            success_msg = f"✅ {message}\n📁 Files saved in: {DEFAULT_OUTPUT_DIR}/"
             self.status_label.setText(success_msg)
             self.status_label.setStyleSheet("padding: 10px; color: #008800; font-size: 12px; font-weight: bold;")
         else:
@@ -777,7 +777,7 @@ class SimpleMainWindow(QMainWindow):
 </ul>
 
 <h3>Output:</h3>
-<p>Generated files are saved in the <b>'generated'</b> folder:</p>
+<p>Generated files are saved in the <b>'{DEFAULT_OUTPUT_DIR}'</b> folder:</p>
 <ul>
 <li>.stl file for 3D printing</li>
 <li>.scad file (OpenSCAD source code)</li>
@@ -938,7 +938,7 @@ class SimpleMainWindow(QMainWindow):
         self.progress_bar.setVisible(False)
 
         if success:
-            self.status_label.setText(f"✅ {message}\n📁 All files saved in: generated/")
+            self.status_label.setText(f"✅ {message}\n📁 All files saved in: {DEFAULT_OUTPUT_DIR}/")
             self.status_label.setStyleSheet("padding: 10px; color: #008800; font-size: 12px; font-weight: bold;")
             QMessageBox.information(self, "Batch Complete", message)
         else:

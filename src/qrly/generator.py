@@ -16,6 +16,9 @@ import subprocess
 import qrcode
 import tempfile
 
+# Default output directory in user's home folder
+DEFAULT_OUTPUT_DIR = Path.home() / "qr-codes"
+
 
 def find_openscad_binary():
     """Find OpenSCAD binary, checking bundled, system, then PATH"""
@@ -585,15 +588,16 @@ Examples:
                         help='Text to display under QR code (max 12 characters, only for *-text modes)')
     parser.add_argument('--text-rotation', type=int, choices=[0, 180], default=0,
                         help='Rotate text 180 degrees in Z-axis (default: 0, automatic for pendant-text mode)')
-    parser.add_argument('--output', '-o', type=str, default='generated',
-                        help='Output directory for generated files (default: ./generated)')
+    parser.add_argument('--output', '-o', type=str, default=str(DEFAULT_OUTPUT_DIR),
+                        help=f'Output directory for generated files (default: {DEFAULT_OUTPUT_DIR})')
     parser.add_argument('--name', '-n', type=str, default=None,
                         help='Base name for output files (default: derived from input)')
 
     args = parser.parse_args()
 
-    # Create output directory if needed
-    os.makedirs(args.output, exist_ok=True)
+    # Expand user path and create output directory if needed
+    output_dir = Path(args.output).expanduser()
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # Check if input is URL or file
     input_path = args.input
@@ -611,7 +615,7 @@ Examples:
             base_name = re.sub(r'[^\w\-]', '_', args.input)[:50]
 
         # Create model subdirectory and generate QR there
-        model_dir = Path(args.output) / base_name
+        model_dir = output_dir / base_name
         model_dir.mkdir(parents=True, exist_ok=True)
 
         qr_path = model_dir / f"{base_name}.png"
@@ -635,7 +639,7 @@ Examples:
 
     # Generate model
     try:
-        generator = QRModelGenerator(input_path, args.mode, args.output)
+        generator = QRModelGenerator(input_path, args.mode, str(output_dir))
         generator.text_content = text_content
 
         # Set text rotation (automatic for pendant-text, user choice for rectangle-text)
