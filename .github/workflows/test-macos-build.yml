@@ -69,6 +69,13 @@ jobs:
         echo "Copying QtDBus.framework..."
         cp -RL "$PYQT6_DIR/lib/QtDBus.framework" dist/Qrly/_internal/PyQt6/Qt6/lib/
 
+        echo "Recreating framework symlinks (required by Qt)..."
+        cd dist/Qrly/_internal/PyQt6/Qt6/lib
+        for framework in QtCore QtWidgets QtGui QtDBus; do
+          ln -sf Versions/A/${framework} ${framework}.framework/${framework}
+        done
+        cd ../../../../../../
+
         echo "✓ Qt frameworks copied successfully"
         ls -la dist/Qrly/_internal/PyQt6/Qt6/lib/
 
