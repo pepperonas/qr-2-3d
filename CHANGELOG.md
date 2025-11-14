@@ -5,6 +5,19 @@ All notable changes to the QR Code 3D Model Generator project will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2025-11-14
+
+### Fixed
+- GUI: Fixed help dialog reference from deleted `CELOX_IO_ANLEITUNG.md` to `README.md`
+- GUI: Increased minimum window height from 800px to 950px to prevent input fields from being cut off
+
+### Documentation
+- Consolidated all documentation into English
+- Complete step-by-step Place ID guide now integrated in README.md
+- Removed separate German guide file
+
+---
+
 ## [0.4.0] - 2025-11-14
 
 ### Added
