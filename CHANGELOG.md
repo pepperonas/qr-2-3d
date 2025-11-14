@@ -35,7 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Documentation
 - Updated README with simplified Google Review section
 - Added three methods for obtaining Place IDs (Official Finder, Browser Inspector, Business Dashboard)
-- Created `CELOX_IO_ANLEITUNG.md` with step-by-step German instructions
+- Integrated complete step-by-step guide directly into README (English)
+- All project documentation now in English
 
 ---
 

@@ -96,7 +96,156 @@ Generate QR codes that link **directly** to your Google Business review page! Pe
 ChIJp4JiUCNP0xQR1JaSjpW_Hms
 ```
 
-📖 **Detailed guide:** See `CELOX_IO_ANLEITUNG.md` for complete step-by-step instructions
+---
+
+### 📖 Complete Step-by-Step Guide
+
+#### Why Place IDs Matter
+
+**The Problem:**
+Standard Google Maps URLs often contain only a **CID** (Customer ID in format `0x...:0x...`), not a real Place ID.
+
+**CID vs Place ID:**
+- ❌ CID: `0x47bd7b12516c75ff:0xf1cbcad05d451d78` - Does NOT work for review links
+- ✅ Place ID: `ChIJ...` - Works for direct review links
+
+**Why PlusCode Doesn't Work:**
+PlusCode (e.g., `9F4FFRJ7+G8`) is only a **geographic coordinate**, not a business identifier.
+- ✅ PlusCode: Good for location sharing
+- ❌ PlusCode: Contains NO Place ID
+- ❌ PlusCode: Cannot link to business reviews
+
+---
+
+#### Method 1: Google Place ID Finder (Easiest)
+
+**Step 1: Open the Tool**
+Visit: https://developers.google.com/maps/documentation/places/web-service/place-id
+
+**Step 2: Scroll down to "Place ID Finder" widget**
+
+**Step 3: Search for your business**
+```
+Your Business Name + City
+Example: "Restaurant Berlin" or "Coffee Shop New York"
+```
+
+**Step 4: Select your business from suggestions**
+
+**Step 5: Copy the Place ID** (looks like: `ChIJ...`)
+
+**Step 6: Use with Qrly**
+
+**CLI:**
+```bash
+./venv-gui/bin/python -m qrly \
+    --place-id "ChIJ_YOUR_PLACE_ID" \
+    --mode rectangle-text \
+    --text "REVIEW US!" \
+    --name my-business-review
+```
+
+**GUI:**
+1. Start: `./venv-gui/bin/python -m qrly.app`
+2. Paste Place ID into field
+3. Enter text (optional)
+4. Select mode: Rectangle + Text
+5. Click "Generate 3D Model"
+
+**Step 7: Verify**
+Test your Place ID in browser:
+```
+https://search.google.com/local/writereview?placeid=ChIJ_YOUR_PLACE_ID
+```
+✅ Should open directly to your business review form!
+
+---
+
+#### Method 2: Browser Inspector (Alternative)
+
+If the official tool doesn't work:
+
+**Step 1: Open Google Search**
+```
+https://www.google.com/search?q=Your+Business+Name+City
+```
+
+**Step 2: Right-click on "Write a review" button** (in Knowledge Panel on right side)
+
+**Step 3: Select "Inspect" / "Inspect Element"**
+
+**Step 4: In Developer Tools: Ctrl+F (or Cmd+F on Mac)**
+
+**Step 5: Search for: `data-pid`**
+
+**Step 6: Copy the value** (after `data-pid="..."`)
+
+**Example HTML:**
+```html
+<button data-pid="ChIJxxx..." ...>Write a review</button>
+                    ^^^^^^^^^
+                    This is your Place ID!
+```
+
+---
+
+#### Method 3: Google My Business Dashboard
+
+**Step 1: Login**
+Visit: https://business.google.com/
+
+**Step 2: Select your business**
+
+**Step 3: Navigate to:**
+```
+Info → Advanced Information → Place ID
+```
+
+**Step 4: Copy the Place ID**
+
+---
+
+#### Success Checklist
+
+- [ ] Google Place ID Finder opened
+- [ ] Business searched and selected
+- [ ] Place ID copied (starts with ChIJ)
+- [ ] Tested in browser: `https://search.google.com/local/writereview?placeid=...`
+- [ ] Review form opens directly ✅
+- [ ] QR code generated with Qrly
+- [ ] QR code tested with phone
+- [ ] QR code leads directly to review form ✅
+
+---
+
+#### Fallback Option
+
+If you can't get a Place ID, you can still create a QR code with a standard Google Maps URL:
+
+```bash
+./venv-gui/bin/python -m qrly \
+    "https://www.google.com/maps/place/Your+Business/@lat,lng" \
+    --mode rectangle-text \
+    --text "FIND US" \
+    --name business-location
+```
+
+✅ QR code will be created
+⚠️ Leads to Maps page (not directly to review form)
+ℹ️ Users must click "Write a review" manually
+
+---
+
+#### Summary
+
+**Best Method:** Google Place ID Finder Tool
+- No API required
+- Official Google solution
+- Works reliably
+
+**URL:** https://developers.google.com/maps/documentation/places/web-service/place-id
+
+**Result:** Real Place ID (ChIJ...) → Direct review links ✅
 
 ### 🌟 Intelligent Text Scaling
 
