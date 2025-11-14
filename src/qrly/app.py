@@ -218,7 +218,7 @@ class SimpleMainWindow(QMainWindow):
     def setup_ui(self):
         """Setup the UI"""
         self.setWindowTitle(f"QR Code 3D Generator v{__version__}")
-        self.setMinimumSize(600, 800)
+        self.setMinimumSize(600, 950)
 
         # Central widget
         central = QWidget()
@@ -700,7 +700,7 @@ class SimpleMainWindow(QMainWindow):
 <p><b>The Place ID should look like:</b><br>
 <code>ChIJp4JiUCNP0xQR1JaSjpW_Hms</code></p>
 
-<p><i>See CELOX_IO_ANLEITUNG.md for detailed instructions</i></p>
+<p><i>See README.md for complete step-by-step instructions</i></p>
 """
 
         msg = QMessageBox(self)
