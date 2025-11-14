@@ -5,6 +5,18 @@ All notable changes to the QR Code 3D Model Generator project will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] - 2025-11-14
+
+### Changed
+- **Thin Model Optimization**: QR relief automatically set to 0.7mm for thin models (card_height ≤ 0.6mm)
+  - Default thin card height is 0.5mm
+  - Previously used 0.5mm relief (same as default)
+  - Now automatically uses 0.7mm relief for better printability and QR code visibility
+  - Applies to GUI, CLI, and batch processing
+  - Console output shows: "→ Thin model detected (height=0.5mm), setting QR relief to 0.7mm"
+
+---
+
 ## [0.4.2] - 2025-11-14
 
 ### Fixed

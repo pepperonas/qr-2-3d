@@ -627,6 +627,11 @@ module qr_pattern() {{
         print(f"Processing: {self.image_path.name}")
         print(f"Mode: {self.mode}")
 
+        # Auto-adjust QR relief for thin models
+        if self.card_height <= 0.6:
+            self.qr_relief = 0.7
+            print(f"→ Thin model detected (height={self.card_height}mm), setting QR relief to 0.7mm")
+
         # Get unique output directory
         base_name = self.output_name or self.image_path.stem  # Use provided name or filename without extension
         model_dir = self.get_unique_output_dir(self.output_dir, base_name, self.card_height, self.size_scale)

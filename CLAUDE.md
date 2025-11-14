@@ -6,9 +6,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **QR Code 3D Model Generator** - Desktop application and CLI tool for generating 3D-printable QR code models from URLs or images. Designed for credit card-sized (55x55mm) physical QR codes optimized for 3D printing.
 
-**Current Version:** 0.3.3
+**Current Version:** 0.4.4
 
-## Recent Updates (v0.3.3)
+## Recent Updates (v0.4.4)
+
+**Optimization:**
+1. **Thin Model QR Relief Optimization** - Automatic QR relief adjustment for thin models (generator.py:630-633)
+   - Thin models (card_height ≤ 0.6mm) automatically use 0.7mm QR relief
+   - Previously: All models used default 0.5mm relief
+   - Improvement: Better printability and QR code visibility on thin models
+   - Applies to: GUI, CLI, and batch processing
+   - Default thin model (0.5mm height) now uses 0.7mm relief automatically
+
+## Updates (v0.3.3)
 
 **New Features:**
 1. **Dynamic Text Scaling** - Text size scales with model size: `max_text_size = 6.0 * size_scale` (generator.py:212)
@@ -676,14 +686,16 @@ For development questions:
 
 ---
 
-**Last Updated:** 2025-11-14 (v0.3.3: Dynamic text scaling and improvements)
+**Last Updated:** 2025-11-14 (v0.4.4: Thin model QR relief optimization)
 **Python Version:** 3.13
-**Package Version:** 0.3.3
+**Package Version:** 0.4.4
 **Package Name:** qrly
 **Primary GUI:** src/qrly/app.py (entry point: `qrly` or `python -m qrly.app`)
 **Primary CLI:** src/qrly/generator.py (entry point: `qrly` or `python -m qrly`)
 **Status:** Production-ready, GUI functional without 3D viewer, src-layout structure, PyInstaller build
 **Latest Features:**
+- **v0.4.4**: Automatic QR relief optimization for thin models (0.7mm for card_height ≤ 0.6mm)
+- **v0.4.0**: Google Review QR codes with simplified Place ID workflow
 - **v0.3.3**: Dynamic text scaling with model size, scaled margins, PyInstaller build (85% smaller)
 - **v0.3.0**: Synchronized relief heights, drag & drop JSON loading, smart output naming
 - **v0.1.0**: Reorganized to Python src-layout standard (src/qrly/, tests/, scripts/)
