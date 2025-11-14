@@ -5,6 +5,15 @@ All notable changes to the QR Code 3D Model Generator project will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2025-11-14
+
+### Fixed
+- **Critical**: Fixed crash in PyInstaller-built macOS app when clicking "❓ How to get Place ID" help button
+  - Removed redundant `QMessageBox` import in `show_place_id_help()` method that caused `abort() called` (SIGABRT) crash
+  - QMessageBox was already imported at module level; duplicate local import created conflict in frozen application
+
+---
+
 ## [0.4.1] - 2025-11-14
 
 ### Fixed

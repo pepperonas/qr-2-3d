@@ -678,8 +678,6 @@ class SimpleMainWindow(QMainWindow):
 
     def show_place_id_help(self):
         """Show help dialog for getting Place ID"""
-        from PyQt6.QtWidgets import QMessageBox
-
         help_text = """<h3>How to get a Google Place ID:</h3>
 
 <ol>

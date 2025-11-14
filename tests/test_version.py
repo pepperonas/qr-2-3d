@@ -18,6 +18,6 @@ def test_version_format():
     assert re.match(pattern, __version__), f"Version '{__version__}' does not match semantic versioning format"
 
 
-def test_version_is_041():
+def test_version_is_042():
     """Test that current version is 0.4.1"""
-    assert __version__ == "0.4.1"
+    assert __version__ == "0.4.2"
