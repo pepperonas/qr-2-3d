@@ -31,9 +31,9 @@ Automatically generate 3D-printable QR code models from URLs or PNG/JPG images -
 
 ## Features
 
-- **Desktop GUI**: User-friendly application with real-time parameter preview
+- **Desktop GUI**: User-friendly application with real-time parameter preview and 3D model preview
+- **3D Preview**: See how your model will look before generating with OpenSCAD rendering
 - **Drag & Drop**: Load all settings by dropping JSON metadata files onto the GUI
-- **Batch Processing**: Automatically generate multiple models via JSON configuration
 - **URL Support**: Generate QR codes directly from URLs
 - **Four Modes**:
   - Square (55x55mm)
@@ -67,7 +67,7 @@ Generate QR codes that link **directly** to your Google Business review page! Pe
 - Only requires a Place ID (ChIJ...)
 - No complex URL parsing
 - Always generates correct review links
-- Works in GUI, CLI, and batch processing
+- Works in GUI and CLI
 
 **How to get a Google Place ID:**
 
@@ -403,86 +403,6 @@ generated/
 - Text data (content, size, rotation for text modes)
 
 **Advantage:** Easy reproduction with exactly the same settings!
-
-### Batch Processing (GUI)
-
-For generating multiple models at once, batch functionality is available:
-
-**First-time use:**
-1. Start GUI: `./venv-gui/bin/python -m qrly.app`
-2. In "Batch Processing" section, click "Create Config Template"
-3. File `batch/config.json` is created with example configuration
-4. Customize `batch/config.json` as desired (see below)
-5. Click "Start Batch (X models)"
-6. Wait until all models are generated
-
-**Config Structure (`batch/config.json`):**
-```json
-{
-  "global_params": {
-    "card_height": 1.25,
-    "qr_margin": 2.0,
-    "qr_relief": 1.0,
-    "corner_radius": 2,
-    "google_review": false
-  },
-  "models": [
-    {
-      "name": "example-square",
-      "url": "https://example.com",
-      "mode": "square"
-    },
-    {
-      "name": "github-pendant",
-      "url": "https://github.com",
-      "mode": "pendant"
-    },
-    {
-      "name": "custom-text",
-      "url": "https://mysite.com",
-      "mode": "rectangle-text",
-      "text": "CUSTOM TEXT",
-      "text_rotation": 0
-    },
-    {
-      "name": "pendant-with-override",
-      "url": "https://wikipedia.org",
-      "mode": "pendant-text",
-      "text": "WIKI",
-      "card_height": 1.5
-    },
-    {
-      "name": "restaurant-review",
-      "url": "https://www.google.com/maps/place/My+Restaurant/@52.5163,13.3777,17z",
-      "mode": "rectangle-text",
-      "google_review": true
-    },
-    {
-      "name": "shop-pendant",
-      "place_id": "ChIJp4JiUCNP0xQR1JaSjpW_Hms",
-      "mode": "pendant-text",
-      "google_review": true,
-      "text": "RATE US!"
-    }
-  ]
-}
-```
-
-**Important Notes:**
-- **global_params**: Default parameters for all models
-- **models**: Array with individual model configurations
-- Required fields per model: `name`, (`url` OR `place_id`), `mode`
-- Optional: `text`, `text_rotation` (for text modes)
-- Optional: `google_review` (enables Google Maps review link generation)
-- Optional: Individual parameters (override global_params)
-- Status label updates automatically every 5 seconds
-- Progress shown in real-time (X/Y models)
-- Failed models are skipped, not aborted
-
-**Google Review Options:**
-- Set `google_review: true` globally or per model
-- Use `url` with Google Maps URL OR `place_id` with Place ID
-- Business name is automatically extracted and used as text (if not specified)
 
 ### Command Line
 

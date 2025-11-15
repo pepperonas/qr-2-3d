@@ -5,6 +5,36 @@ All notable changes to the QR Code 3D Model Generator project will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2025-11-15
+
+### Added
+- **🎨 3D Model Preview**: New preview dialog with OpenSCAD-rendered visualization
+  - Click "Preview 3D Model" button to see how the model will look before generation
+  - Shows actual OpenSCAD rendering with proper 3D perspective
+  - White base card with black QR code and text on dark background
+  - Auto-centered, scaled to fit view
+  - Camera positioned at 55° X-rotation, 205° Z-rotation for optimal view
+  - Preview generates temporary files in system temp directory
+  - Renders in ~1-2 seconds with OpenSCAD 2025+
+
+### Changed
+- **ℹ️ Improved Help Dialog**: Redesigned info dialog (❓ button)
+  - Wider and less tall layout (700x500px instead of standard MessageBox)
+  - Added footer with project information and MIT license notice
+  - Clickable GitHub repository link: https://github.com/pepperonas/qrly
+  - Better content organization with QTextBrowser for scrolling
+  - Styled Close button matching app theme
+
+### Removed
+- **Batch Processing**: Removed entire batch processing functionality
+  - Removed BatchGeneratorThread class and all related code
+  - Removed batch UI section (status label, buttons, timer)
+  - Removed batch configuration file support (batch/config.json)
+  - Simplified codebase by ~120 lines
+  - Users can still generate multiple models by running the app multiple times
+
+---
+
 ## [0.4.4] - 2025-11-14
 
 ### Changed

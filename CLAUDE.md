@@ -6,16 +6,44 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **QR Code 3D Model Generator** - Desktop application and CLI tool for generating 3D-printable QR code models from URLs or images. Designed for credit card-sized (55x55mm) physical QR codes optimized for 3D printing.
 
-**Current Version:** 0.4.4
+**Current Version:** 0.5.0
 
-## Recent Updates (v0.4.4)
+## Recent Updates (v0.5.0)
+
+**New Features:**
+1. **3D Model Preview** - OpenSCAD-rendered preview dialog (app.py:89-244)
+   - Click "Preview 3D Model" button to see model before generation
+   - Uses actual OpenSCAD rendering for accurate visualization
+   - White base card with black QR code and text on dark background
+   - Camera positioned at 55° X-rotation, 205° Z-rotation for optimal 3D view
+   - Auto-centered and scaled to fit (--autocenter, --viewall flags)
+   - Generates temporary SCAD file and renders to PNG using OpenSCAD CLI
+   - Colorscheme: Starnight (dark background)
+   - Renders in ~1-2 seconds with OpenSCAD 2025+
+   - Preview uses temporary directory (cleaned up after viewing)
+
+2. **Improved Help Dialog** - Redesigned info dialog (app.py:898-987)
+   - Wider and less tall layout (700x500px)
+   - QTextBrowser for better content organization and scrolling
+   - Footer with project information and MIT license
+   - Clickable GitHub repository link: https://github.com/pepperonas/qrly
+   - Styled Close button matching app theme
+
+**Removed:**
+- **Batch Processing** - Entire batch processing functionality removed
+  - Removed BatchGeneratorThread class
+  - Removed batch UI section (status label, buttons, timer)
+  - Removed batch/config.json support
+  - Simplified codebase by ~120 lines
+
+## Updates (v0.4.4)
 
 **Optimization:**
 1. **Thin Model QR Relief Optimization** - Automatic QR relief adjustment for thin models (generator.py:630-633)
    - Thin models (card_height ≤ 0.6mm) automatically use 0.7mm QR relief
    - Previously: All models used default 0.5mm relief
    - Improvement: Better printability and QR code visibility on thin models
-   - Applies to: GUI, CLI, and batch processing
+   - Applies to: GUI and CLI
    - Default thin model (0.5mm height) now uses 0.7mm relief automatically
 
 ## Updates (v0.3.3)
@@ -82,9 +110,7 @@ QRs/
 │   │   └── example-medium-medium.stl
 │   ├── github-large-thin/     # Large (2.0x), thin (0.5mm)
 │   └── mysite-small-thick/    # Small (0.5x), thick (1.5mm)
-├── batch/                     # Batch processing (user-specific, gitignored)
-│   └── config.json            # Batch configuration file
-├── pyproject.toml             # Package configuration (v0.3.0)
+├── pyproject.toml             # Package configuration (v0.5.0)
 ├── pytest.ini                 # Test configuration
 ├── qrly.spec                  # PyInstaller build specification
 ├── README.md                  # User documentation
@@ -168,63 +194,29 @@ Background worker that:
 5. Generates SCAD and STL files
 6. Emits signals for progress and completion
 
-**Class: BatchGeneratorThread (QThread)**
+**Class: PreviewDialog (QDialog)**
 
-Background worker for batch processing that:
-1. Loads `batch/config.json` configuration
-2. Parses global parameters and models array
-3. Iterates through all models sequentially
-4. For each model:
-   - Validates required fields (name, url, mode)
-   - Generates QR code from URL if needed
-   - Creates QRModelGenerator with global params
-   - Applies model-specific parameter overrides
-   - Generates SCAD and STL files
-   - Emits progress signals (current/total)
-5. Collects success/failure statistics
-6. Emits final summary with details
+Preview dialog that shows OpenSCAD-rendered visualization:
+1. Accepts input (URL or image), mode, parameters, text content
+2. Generates temporary QR code if URL is provided
+3. Creates QRModelGenerator instance with user parameters
+4. Generates temporary SCAD file with color modifications:
+   - Base card: `color("white")`
+   - QR code pattern: `color("black")`
+   - Text labels: `color("black")`
+5. Renders SCAD to PNG using OpenSCAD CLI:
+   - Camera: `--camera=0,0,0,55,0,205,200` (3D perspective view)
+   - Flags: `--autocenter`, `--viewall`, `--projection=ortho`
+   - Colorscheme: `--colorscheme=Starnight` (dark background)
+   - Image size: 800x800px
+6. Displays rendered PNG in QLabel with scaling
+7. Shows status messages during generation
+8. Cleans up temporary files (optional, currently disabled for debugging)
 
-**Batch Processing Features:**
-- **Auto-refresh**: QTimer checks config status every 5 seconds
-- **Status display**: Shows config existence, model count, or JSON errors
-- **Button states**: Dynamic text ("Create Config", "Start Batch (X models)")
-- **Config template**: Creates `batch/config.json` with 4 example models
-- **Error handling**: Skips failed models, continues with remaining ones
-- **Progress tracking**: Real-time updates showing "Processing X/Y: model-name"
-- **Global parameters**: card_height, qr_margin, qr_relief, corner_radius
-- **Model overrides**: Individual models can override global params
-- **Output**: All files saved to `generated/` directory
-
-**Batch Config Structure (`batch/config.json`):**
-```json
-{
-  "global_params": {
-    "card_height": 1.25,
-    "qr_margin": 2.0,
-    "qr_relief": 1.0,
-    "corner_radius": 2
-  },
-  "models": [
-    {
-      "name": "example-square",
-      "url": "https://example.com",
-      "mode": "square"
-    },
-    {
-      "name": "custom-params",
-      "url": "https://github.com",
-      "mode": "pendant-text",
-      "text": "GITHUB",
-      "card_height": 1.5
-    }
-  ]
-}
-```
-
-**Important: No 3D Viewer**
-- ViewerWidget exists but is NOT used in src/qrly/app.py
-- PyVista 3D rendering has compatibility issues on macOS
-- Users open STL files in external viewers/slicers
+**Important: 3D Preview vs External Viewers**
+- PreviewDialog shows OpenSCAD-rendered preview for quick visualization
+- For final STL viewing, users open files in external viewers/slicers
+- ViewerWidget (PyVista) exists but is NOT used due to macOS compatibility issues
 
 ## Critical Design Decisions
 
@@ -686,20 +678,20 @@ For development questions:
 
 ---
 
-**Last Updated:** 2025-11-14 (v0.4.4: Thin model QR relief optimization)
+**Last Updated:** 2025-11-15 (v0.5.0: 3D Preview dialog and improved help)
 **Python Version:** 3.13
-**Package Version:** 0.4.4
+**Package Version:** 0.5.0
 **Package Name:** qrly
 **Primary GUI:** src/qrly/app.py (entry point: `qrly` or `python -m qrly.app`)
 **Primary CLI:** src/qrly/generator.py (entry point: `qrly` or `python -m qrly`)
-**Status:** Production-ready, GUI functional without 3D viewer, src-layout structure, PyInstaller build
+**Status:** Production-ready, GUI with 3D preview, src-layout structure, PyInstaller build
 **Latest Features:**
+- **v0.5.0**: 3D Model Preview with OpenSCAD rendering, improved help dialog with GitHub link
 - **v0.4.4**: Automatic QR relief optimization for thin models (0.7mm for card_height ≤ 0.6mm)
 - **v0.4.0**: Google Review QR codes with simplified Place ID workflow
 - **v0.3.3**: Dynamic text scaling with model size, scaled margins, PyInstaller build (85% smaller)
 - **v0.3.0**: Synchronized relief heights, drag & drop JSON loading, smart output naming
 - **v0.1.0**: Reorganized to Python src-layout standard (src/qrly/, tests/, scripts/)
-- Batch processing: Generate multiple models from JSON configuration
 - Text rotation (0° or 180°) for text modes - Rectangle-text: user choice, Pendant-text: automatic
 **Developer:** Martin Pfeffer
 **License:** MIT

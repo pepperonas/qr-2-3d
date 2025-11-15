@@ -15,9 +15,10 @@ sys.path.insert(0, str(project_root))
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QLineEdit, QPushButton, QComboBox, QDoubleSpinBox,
-    QGroupBox, QFormLayout, QGridLayout, QProgressBar, QFileDialog, QMessageBox, QCheckBox
+    QGroupBox, QFormLayout, QGridLayout, QProgressBar, QFileDialog, QMessageBox, QCheckBox, QDialog, QSizePolicy, QTextBrowser
 )
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtGui import QPixmap
 from qrly.generator import QRModelGenerator
 from qrly import __version__
 
@@ -85,113 +86,184 @@ class GeneratorThread(QThread):
             self.finished.emit(False, "", f"Error: {str(e)}")
 
 
-class BatchGeneratorThread(QThread):
-    """Background thread for batch STL generation"""
-    progress = pyqtSignal(str)  # Progress message
-    model_progress = pyqtSignal(int, int, str)  # current, total, model_name
-    finished = pyqtSignal(bool, int, int, str)  # success, successful_count, total_count, message
+class PreviewDialog(QDialog):
+    """Dialog showing OpenSCAD-rendered preview of the model"""
 
-    def __init__(self, config_path):
-        super().__init__()
-        self.config_path = config_path
+    def __init__(self, input_path, mode, params, text_content='', text_content_top='', text_rotation=0, parent=None):
+        super().__init__(parent)
+        self.input_path = input_path
+        self.mode = mode
+        self.params = params
+        self.text_content = text_content
+        self.text_content_top = text_content_top
+        self.text_rotation = text_rotation
+        self.preview_image = None
+        self.setup_ui()
+        self.generate_preview()
 
-    def run(self):
+    def setup_ui(self):
+        """Setup preview dialog UI"""
+        self.setWindowTitle("3D Model Preview")
+        self.resize(800, 700)
+
+        layout = QVBoxLayout(self)
+
+        # Status label
+        self.status_label = QLabel("Generating preview...")
+        self.status_label.setStyleSheet("font-weight: bold; padding: 10px; color: #0066cc;")
+        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.status_label)
+
+        # Image label
+        self.image_label = QLabel()
+        self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.image_label.setStyleSheet("border: 2px solid #ccc; background-color: #ffffff;")
+        self.image_label.setMinimumSize(600, 500)
+        layout.addWidget(self.image_label)
+
+        # Set dialog background to white
+        self.setStyleSheet("QDialog { background-color: #ffffff; }")
+
+        # Close button
+        close_btn = QPushButton("Close")
+        close_btn.clicked.connect(self.accept)
+        close_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #6c757d;
+                color: white;
+                font-size: 14px;
+                padding: 10px;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #5a6268;
+            }
+        """)
+        layout.addWidget(close_btn)
+
+    def generate_preview(self):
+        """Generate preview by creating temporary SCAD and rendering it"""
+        import tempfile
+        import subprocess
+
         try:
-            # Load configuration
-            self.progress.emit("Loading batch configuration...")
-            with open(self.config_path, 'r', encoding='utf-8') as f:
-                config = json.load(f)
+            # Create temp directory
+            temp_dir = Path(tempfile.mkdtemp(prefix='qrly_preview_'))
 
-            global_params = config.get('global_params', {})
-            models = config.get('models', [])
+            # Check if input is URL and generate QR code if needed
+            actual_input = self.input_path
+            if self.input_path and QRModelGenerator.is_url(self.input_path):
+                self.status_label.setText("Generating QR code from URL...")
+                QApplication.processEvents()
+                actual_input = QRModelGenerator.generate_qr_image(self.input_path)
+            elif not self.input_path:
+                # Create a dummy QR code for preview
+                self.status_label.setText("Generating sample QR code...")
+                QApplication.processEvents()
+                actual_input = QRModelGenerator.generate_qr_image("https://example.com")
 
-            if not models:
-                self.finished.emit(False, 0, 0, "No models found in configuration")
-                return
+            # Create generator
+            self.status_label.setText("Creating 3D model...")
+            QApplication.processEvents()
 
-            total = len(models)
-            successful = 0
-            failed_models = []
+            generator = QRModelGenerator(actual_input, self.mode, str(temp_dir), output_name='preview')
 
-            # Process each model
-            for idx, model_config in enumerate(models, 1):
-                try:
-                    # Validate required fields
-                    if 'name' not in model_config or ('url' not in model_config and 'place_id' not in model_config) or 'mode' not in model_config:
-                        failed_models.append(f"{model_config.get('name', f'Model {idx}')} (missing required fields)")
-                        self.progress.emit(f"⚠️ Skipping model {idx}/{total}: Missing required fields (name, url/place_id, mode)")
-                        continue
+            # Apply parameters
+            generator.card_height = self.params['height']
+            generator.qr_margin = self.params['margin']
+            generator.qr_relief = self.params['relief']
+            generator.corner_radius = self.params['corner_radius']
+            generator.size_scale = self.params['size_scale']
+            generator.text_content = self.text_content
+            generator.text_content_top = self.text_content_top
+            generator.text_rotation = self.text_rotation
+            generator.text_height = self.params['relief']
 
-                    name = model_config['name']
-                    url = model_config.get('url')
-                    place_id = model_config.get('place_id')
-                    mode = model_config['mode']
+            # Load and process image
+            matrix, width, height = generator.load_and_process_image()
+            dimensions = generator.calculate_dimensions(height)
 
-                    self.model_progress.emit(idx, total, name)
-                    self.progress.emit(f"Processing {idx}/{total}: {name}")
+            # Generate SCAD file
+            scad_content = generator.generate_openscad(matrix, dimensions)
 
-                    # Google Review Processing (Place ID only)
-                    if place_id:
-                        from .google_review import is_valid_place_id, generate_review_url
+            # Add colors for preview (white base, black QR/text)
+            scad_content = scad_content.replace(
+                '        // Base card with rounded corners (hull is MUCH faster than minkowski)\n        rounded_square(card_width, card_length, card_height, corner_radius);',
+                '        // Base card with rounded corners (hull is MUCH faster than minkowski)\n        color("white")\n        rounded_square(card_width, card_length, card_height, corner_radius);'
+            )
+            scad_content = scad_content.replace(
+                '        // QR Code pattern (raised)\n        translate([qr_offset_x, qr_offset_y, card_height])\n            qr_pattern();',
+                '        // QR Code pattern (raised)\n        color("black")\n        translate([qr_offset_x, qr_offset_y, card_height])\n            qr_pattern();'
+            )
+            scad_content = scad_content.replace(
+                '        // Top text label (if enabled, for rectangle-text-2x mode)\n        text_label_top();',
+                '        // Top text label (if enabled, for rectangle-text-2x mode)\n        color("black")\n        text_label_top();'
+            )
+            scad_content = scad_content.replace(
+                '        // Bottom text label (if enabled)\n        text_label();',
+                '        // Bottom text label (if enabled)\n        color("black")\n        text_label();'
+            )
 
-                        self.progress.emit(f"🗺️  Processing Place ID for {name}...")
+            scad_file = temp_dir / 'preview.scad'
+            with open(scad_file, 'w', encoding='utf-8') as f:
+                f.write(scad_content)
 
-                        if not is_valid_place_id(place_id):
-                            self.progress.emit(f"⚠️  Invalid Place ID for {name}: {place_id}")
-                            failed_models.append(f"{name} (invalid Place ID)")
-                            continue
+            # Render preview image with OpenSCAD
+            self.status_label.setText("Rendering preview (this may take a few seconds)...")
+            QApplication.processEvents()
 
-                        url = generate_review_url(place_id)
-                        self.progress.emit(f"✅ Review link generated for {name}")
+            preview_image = temp_dir / 'preview.png'
 
-                    # Check if input is a URL
-                    actual_input = url
-                    if QRModelGenerator.is_url(url):
-                        self.progress.emit(f"Generating QR code from URL...")
+            # Find OpenSCAD binary
+            from qrly.generator import find_openscad_binary
+            openscad_bin = find_openscad_binary()
 
-                        # Generate QR to temporary file (generate() will handle final placement)
-                        actual_input = QRModelGenerator.generate_qr_image(url)
+            # Camera position for nice 3D view
+            # translate_x,y,z,rot_x,rot_y,rot_z,distance
+            camera_pos = "0,0,0,55,0,205,200"  # x,y,z,rot_x,rot_y,rot_z,distance (205 = 25 + 180)
 
-                    # Create generator
-                    generator = QRModelGenerator(actual_input, mode, str(DEFAULT_OUTPUT_DIR), output_name=name)
+            # Render command (similar to export_stl but with PNG-specific parameters)
+            cmd = [
+                openscad_bin,
+                '-o', str(preview_image),
+                '--autocenter',
+                '--viewall',
+                '--camera=' + camera_pos,
+                '--imgsize=800,800',
+                '--projection=ortho',
+                '--colorscheme=Starnight',
+                str(scad_file)
+            ]
 
-                    # Apply global parameters (with model-specific overrides)
-                    generator.card_height = model_config.get('card_height', global_params.get('card_height', 1.25))
-                    generator.qr_margin = model_config.get('qr_margin', global_params.get('qr_margin', 0.5))
-                    generator.qr_relief = model_config.get('qr_relief', global_params.get('qr_relief', 1.0))
-                    generator.corner_radius = model_config.get('corner_radius', global_params.get('corner_radius', 2))
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
 
-                    # Text mode parameters
-                    generator.text_content = model_config.get('text', '')
-                    generator.text_rotation = model_config.get('text_rotation', 0)
-                    generator.text_height = generator.qr_relief  # Sync text relief with QR relief
-
-                    # Generate model
-                    self.progress.emit(f"Creating 3D model for {name}...")
-                    scad_path, stl_path, json_path = generator.generate(qr_input=url)
-
-                    successful += 1
-                    self.progress.emit(f"✅ {name} completed ({idx}/{total})")
-
-                except Exception as e:
-                    failed_models.append(f"{model_config.get('name', f'Model {idx}')} ({str(e)})")
-                    self.progress.emit(f"❌ Failed: {model_config.get('name', f'Model {idx}')} - {str(e)}")
-
-            # Final summary
-            if successful == total:
-                message = f"All {total} models generated successfully!"
+            if result.returncode == 0 and preview_image.exists():
+                # Load and display image
+                pixmap = QPixmap(str(preview_image))
+                if not pixmap.isNull():
+                    # Scale to fit
+                    scaled_pixmap = pixmap.scaled(
+                        self.image_label.size(),
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation
+                    )
+                    self.image_label.setPixmap(scaled_pixmap)
+                    self.status_label.setText("Preview ready")
+                    self.status_label.setStyleSheet("font-weight: bold; padding: 10px; color: #28a745;")
+                else:
+                    raise Exception("Failed to load rendered image")
             else:
-                failed_count = total - successful
-                message = f"Completed: {successful}/{total} models. Failed: {failed_count}"
-                if failed_models:
-                    message += f"\n\nFailed models:\n" + "\n".join(f"• {m}" for m in failed_models)
+                raise Exception(f"OpenSCAD rendering failed: {result.stderr}")
 
-            self.finished.emit(successful == total, successful, total, message)
+            # Cleanup temp files (keep them for a moment for debugging)
+            # import shutil
+            # shutil.rmtree(temp_dir)
 
-        except json.JSONDecodeError as e:
-            self.finished.emit(False, 0, 0, f"JSON Parse Error: {str(e)}")
         except Exception as e:
-            self.finished.emit(False, 0, 0, f"Batch Error: {str(e)}")
+            self.status_label.setText(f"Preview generation failed: {str(e)}")
+            self.status_label.setStyleSheet("font-weight: bold; padding: 10px; color: #cc0000;")
+            self.image_label.setText("Could not generate preview")
+            self.image_label.setStyleSheet("border: 2px solid #ccc; background-color: #f8f9fa; color: #666;")
 
 
 class SimpleMainWindow(QMainWindow):
@@ -200,25 +272,15 @@ class SimpleMainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.generator_thread = None
-        self.batch_thread = None
-        self.batch_config_path = Path("batch/config.json")
         self.setup_ui()
 
         # Enable drag and drop for JSON config files
         self.setAcceptDrops(True)
 
-        # Setup timer for batch status updates (every 5 seconds)
-        self.batch_status_timer = QTimer(self)
-        self.batch_status_timer.timeout.connect(self.update_batch_status)
-        self.batch_status_timer.start(5000)  # 5000ms = 5 seconds
-
-        # Initial batch status update
-        self.update_batch_status()
-
     def setup_ui(self):
         """Setup the UI"""
         self.setWindowTitle(f"QR Code 3D Generator v{__version__}")
-        self.setMinimumSize(600, 950)
+        self.setMinimumSize(600, 900)
 
         # Central widget
         central = QWidget()
@@ -251,8 +313,6 @@ class SimpleMainWindow(QMainWindow):
         input_layout.addLayout(name_layout)
 
         input_group.setLayout(input_layout)
-        # Allow input section to expand
-        from PyQt6.QtWidgets import QSizePolicy
         input_group.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         layout.addWidget(input_group)
 
@@ -387,7 +447,6 @@ class SimpleMainWindow(QMainWindow):
         self.current_size_scale = 1.0
 
         mode_group.setLayout(mode_layout)
-        # Allow mode section to expand
         mode_group.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         layout.addWidget(mode_group)
 
@@ -433,7 +492,6 @@ class SimpleMainWindow(QMainWindow):
         params_layout.addWidget(self.corner_spin, 1, 3)
 
         params_group.setLayout(params_layout)
-        # Allow parameters section to expand
         params_group.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         layout.addWidget(params_group)
 
@@ -494,13 +552,31 @@ class SimpleMainWindow(QMainWindow):
         thickness_layout.addWidget(thick_btn)
 
         thickness_group.setLayout(thickness_layout)
-        # Allow thickness presets section to expand
         thickness_group.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         layout.addWidget(thickness_group)
 
-        # Generate button and Help button row
+        # Preview and Generate button row
         button_row = QHBoxLayout()
 
+        # Preview button
+        self.preview_btn = QPushButton("Preview 3D Model")
+        self.preview_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #6c757d;
+                color: white;
+                font-size: 14px;
+                font-weight: bold;
+                padding: 12px;
+                border-radius: 6px;
+            }
+            QPushButton:hover {
+                background-color: #5a6268;
+            }
+        """)
+        self.preview_btn.clicked.connect(self.show_preview)
+        button_row.addWidget(self.preview_btn)
+
+        # Generate button
         self.generate_btn = QPushButton("Generate 3D Model")
         self.generate_btn.setStyleSheet("""
             QPushButton {
@@ -542,45 +618,6 @@ class SimpleMainWindow(QMainWindow):
         button_row.addWidget(help_btn)
 
         layout.addLayout(button_row)
-
-        # Batch processing section
-        batch_group = QGroupBox("Batch Processing")
-        batch_layout = QVBoxLayout()
-        batch_layout.setSpacing(8)  # Compact spacing within batch section
-        batch_layout.setContentsMargins(10, 10, 10, 10)  # Reduce internal margins
-
-        # Batch status label
-        self.batch_status_label = QLabel("Checking batch configuration...")
-        self.batch_status_label.setWordWrap(True)
-        self.batch_status_label.setStyleSheet("padding: 8px; color: #666; font-size: 11px;")
-        batch_layout.addWidget(self.batch_status_label)
-
-        # Batch button
-        self.batch_btn = QPushButton("Start Batch Generation")
-        self.batch_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #28a745;
-                color: white;
-                font-size: 12px;
-                font-weight: bold;
-                padding: 10px;
-                border-radius: 5px;
-            }
-            QPushButton:hover {
-                background-color: #218838;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-            }
-        """)
-        self.batch_btn.clicked.connect(self.on_batch_button_clicked)
-        batch_layout.addWidget(self.batch_btn)
-
-        batch_group.setLayout(batch_layout)
-        # Set size policy to prevent excessive vertical expansion
-        from PyQt6.QtWidgets import QSizePolicy
-        batch_group.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
-        layout.addWidget(batch_group)
 
         # Progress bar
         self.progress_bar = QProgressBar()
@@ -708,6 +745,45 @@ class SimpleMainWindow(QMainWindow):
         msg.setIcon(QMessageBox.Icon.Information)
         msg.exec()
 
+    def show_preview(self):
+        """Show preview dialog"""
+        # Get input
+        input_text = self.input_field.text().strip()
+
+        # Get mode
+        mode_index = self.mode_combo.currentIndex()
+        mode_map = {
+            0: 'square',
+            1: 'pendant',
+            2: 'rectangle-text',
+            3: 'pendant-text',
+            4: 'rectangle-text-2x'
+        }
+        mode = mode_map.get(mode_index, 'square')
+
+        # Get text content
+        text_content = self.text_field.text().strip() if mode_index >= 2 else ''
+        text_content_top = self.text_field_top.text().strip() if mode_index == 4 else ''
+
+        # Get text rotation
+        if mode_index >= 2:  # All text modes
+            text_rotation = 180
+        else:
+            text_rotation = 0
+
+        # Get parameters
+        params = {
+            'height': self.height_spin.value(),
+            'margin': self.margin_spin.value(),
+            'relief': self.relief_spin.value(),
+            'corner_radius': self.corner_spin.value(),
+            'size_scale': self.current_size_scale
+        }
+
+        # Show preview dialog
+        dialog = PreviewDialog(input_text, mode, params, text_content, text_content_top, text_rotation, self)
+        dialog.exec()
+
     def generate_model(self):
         """Start model generation in background thread"""
         input_text = self.input_field.text().strip()
@@ -819,23 +895,6 @@ class SimpleMainWindow(QMainWindow):
             self.status_label.setStyleSheet("padding: 10px; color: #cc0000; font-size: 12px; font-weight: bold;")
             QMessageBox.critical(self, "Generation Failed", message)
 
-    def check_batch_config(self):
-        """Check batch configuration and return status"""
-        try:
-            if not self.batch_config_path.exists():
-                return False, 0, None
-
-            with open(self.batch_config_path, 'r', encoding='utf-8') as f:
-                config = json.load(f)
-
-            models = config.get('models', [])
-            return True, len(models), None
-
-        except json.JSONDecodeError as e:
-            return True, 0, f"JSON Error: {str(e)}"
-        except Exception as e:
-            return True, 0, f"Error: {str(e)}"
-
     def show_help_dialog(self):
         """Show help dialog with usage tips"""
         help_text = """<h2>QR Code 3D Model Generator</h2>
@@ -872,6 +931,9 @@ class SimpleMainWindow(QMainWindow):
 <li><b>Thick (1.5mm):</b> More stable, better readability</li>
 </ul>
 
+<h3>Preview:</h3>
+<p>Click <b>"Preview 3D Model"</b> to see a top-down view of how the QR code and text will be positioned on the model.</p>
+
 <h3>Output:</h3>
 <p>Generated files are saved in the <b>'{DEFAULT_OUTPUT_DIR}'</b> folder:</p>
 <ul>
@@ -885,162 +947,43 @@ class SimpleMainWindow(QMainWindow):
 <p>With OpenSCAD 2025+ generation takes only ~1 second!</p>
 """
 
-        msg = QMessageBox(self)
-        msg.setWindowTitle("Help - QR Code 3D Generator")
-        msg.setTextFormat(Qt.TextFormat.RichText)
-        msg.setText(help_text)
-        msg.setIcon(QMessageBox.Icon.Information)
-        msg.setStandardButtons(QMessageBox.StandardButton.Ok)
-        msg.exec()
+        footer_text = """<hr>
+<p style='text-align: center; color: #666; font-size: 11px;'>
+Open Source Project by Martin Pfeffer | MIT License | © 2025<br>
+<a href='https://github.com/pepperonas/qrly' style='color: #0066cc;'>github.com/pepperonas/qrly</a>
+</p>
+"""
 
-    def update_batch_status(self):
-        """Update batch status label"""
-        exists, count, error = self.check_batch_config()
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Help - QR Code 3D Generator")
+        dialog.resize(700, 500)  # Wider and less high
 
-        if error:
-            self.batch_status_label.setText(f"⚠️ {error}")
-            self.batch_status_label.setStyleSheet("padding: 8px; color: #cc0000; font-size: 11px;")
-            self.batch_btn.setText("Create New Config")
-            self.batch_btn.setEnabled(True)
-        elif not exists:
-            self.batch_status_label.setText("📄 No batch configuration found")
-            self.batch_status_label.setStyleSheet("padding: 8px; color: #666; font-size: 11px;")
-            self.batch_btn.setText("Create Config Template")
-            self.batch_btn.setEnabled(True)
-        elif count == 0:
-            self.batch_status_label.setText("📄 Config exists but no models defined")
-            self.batch_status_label.setStyleSheet("padding: 8px; color: #666; font-size: 11px;")
-            self.batch_btn.setText("Edit Config")
-            self.batch_btn.setEnabled(True)
-        else:
-            self.batch_status_label.setText(f"✅ Ready: {count} model{'s' if count != 1 else ''} in queue")
-            self.batch_status_label.setStyleSheet("padding: 8px; color: #28a745; font-size: 11px; font-weight: bold;")
-            self.batch_btn.setText(f"Start Batch ({count} models)")
-            self.batch_btn.setEnabled(True)
+        layout = QVBoxLayout(dialog)
 
-    def create_default_batch_config(self):
-        """Create default batch configuration with examples"""
-        config = {
-            "global_params": {
-                "card_height": 1.25,
-                "qr_margin": 2.0,
-                "qr_relief": 1.0,
-                "corner_radius": 2
-            },
-            "models": [
-                {
-                    "name": "example-square",
-                    "url": "https://example.com",
-                    "mode": "square"
-                },
-                {
-                    "name": "github-pendant",
-                    "url": "https://github.com",
-                    "mode": "pendant"
-                },
-                {
-                    "name": "custom-text",
-                    "url": "https://mysite.com",
-                    "mode": "rectangle-text",
-                    "text": "CUSTOM TEXT",
-                    "text_rotation": 0
-                },
-                {
-                    "name": "pendant-text-example",
-                    "url": "https://wikipedia.org",
-                    "mode": "pendant-text",
-                    "text": "WIKI",
-                    "card_height": 1.5
-                }
-            ]
-        }
+        # Content label with scrolling
+        text_browser = QTextBrowser()
+        text_browser.setHtml(help_text + footer_text)
+        text_browser.setOpenExternalLinks(True)  # Enable clickable links
+        layout.addWidget(text_browser)
 
-        # Create batch directory
-        batch_dir = self.batch_config_path.parent
-        os.makedirs(batch_dir, exist_ok=True)
+        # Close button
+        close_btn = QPushButton("Close")
+        close_btn.clicked.connect(dialog.accept)
+        close_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #6c757d;
+                color: white;
+                font-size: 14px;
+                padding: 10px;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #5a6268;
+            }
+        """)
+        layout.addWidget(close_btn)
 
-        # Write config
-        with open(self.batch_config_path, 'w', encoding='utf-8') as f:
-            json.dump(config, f, indent=2, ensure_ascii=False)
-
-    def on_batch_button_clicked(self):
-        """Handle batch button click"""
-        exists, count, error = self.check_batch_config()
-
-        # Case 1: No config or error - create new config
-        if not exists or error:
-            try:
-                self.create_default_batch_config()
-                QMessageBox.information(
-                    self,
-                    "Config Created",
-                    f"Batch configuration template created at:\n{self.batch_config_path}\n\n"
-                    "Edit this file to customize your batch jobs, then click the button again to start."
-                )
-                self.update_batch_status()
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to create config:\n{str(e)}")
-            return
-
-        # Case 2: Config exists but no models
-        if count == 0:
-            QMessageBox.warning(
-                self,
-                "No Models",
-                f"Configuration file exists but contains no models.\n\n"
-                f"Edit the file at:\n{self.batch_config_path}"
-            )
-            return
-
-        # Case 3: Ready to process - start batch
-        reply = QMessageBox.question(
-            self,
-            "Start Batch Processing",
-            f"Ready to generate {count} model{'s' if count != 1 else ''}.\n\n"
-            "This may take several minutes depending on complexity.\n\n"
-            "Continue?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-
-        if reply == QMessageBox.StandardButton.Yes:
-            # Disable buttons
-            self.generate_btn.setEnabled(False)
-            self.batch_btn.setEnabled(False)
-            self.progress_bar.setVisible(True)
-            self.progress_bar.setRange(0, count)
-            self.progress_bar.setValue(0)
-            self.status_label.setText("Starting batch processing...")
-
-            # Start batch thread
-            self.batch_thread = BatchGeneratorThread(str(self.batch_config_path))
-            self.batch_thread.progress.connect(self.on_batch_progress)
-            self.batch_thread.model_progress.connect(self.on_batch_model_progress)
-            self.batch_thread.finished.connect(self.on_batch_finished)
-            self.batch_thread.start()
-
-    def on_batch_progress(self, message: str):
-        """Update batch progress message"""
-        self.status_label.setText(message)
-
-    def on_batch_model_progress(self, current: int, total: int, name: str):
-        """Update batch progress bar"""
-        self.progress_bar.setValue(current)
-        self.status_label.setText(f"Processing {current}/{total}: {name}")
-
-    def on_batch_finished(self, success: bool, successful: int, total: int, message: str):
-        """Handle batch generation completion"""
-        self.generate_btn.setEnabled(True)
-        self.batch_btn.setEnabled(True)
-        self.progress_bar.setVisible(False)
-
-        if success:
-            self.status_label.setText(f"✅ {message}\n📁 All files saved in: {DEFAULT_OUTPUT_DIR}/")
-            self.status_label.setStyleSheet("padding: 10px; color: #008800; font-size: 12px; font-weight: bold;")
-            QMessageBox.information(self, "Batch Complete", message)
-        else:
-            self.status_label.setText(f"⚠️ {message}")
-            self.status_label.setStyleSheet("padding: 10px; color: #cc6600; font-size: 12px; font-weight: bold;")
-            QMessageBox.warning(self, "Batch Completed with Issues", message)
+        dialog.exec()
 
     def dragEnterEvent(self, event):
         """Handle drag enter event - accept JSON files"""
